@@ -64,11 +64,6 @@ export async function getActivePlan(): Promise<Plan | null> {
   };
 }
 
-export async function updatePlanTranslation(planId: number, translation: string): Promise<void> {
-  const db = await getDatabase();
-  await db.runAsync('UPDATE plan SET translation = ? WHERE id = ?', [translation, planId]);
-}
-
 export async function updatePlanNotificationTime(
   planId: number,
   time: string | null

@@ -26,15 +26,10 @@ export const PLAN_DURATIONS = [
 export type PlanDurationPreset = typeof PLAN_DURATIONS[number]['days'];
 
 export const TRANSLATIONS = [
-  { id: 'kjv',   label: 'KJV',   fullName: 'King James Version' },
-  { id: 'web',   label: 'WEB',   fullName: 'World English Bible' },
-  { id: 'asv',   label: 'ASV',   fullName: 'American Standard Version' },
-  { id: 'bbe',   label: 'BBE',   fullName: 'Bible in Basic English' },
-  { id: 'darby', label: 'Darby', fullName: 'Darby Bible' },
-  { id: 'dra',   label: 'DRA',   fullName: 'Douay-Rheims 1899' },
+  { id: 'kjv', label: 'KJV', fullName: 'King James Version' },
 ] as const;
 
-export type Translation = typeof TRANSLATIONS[number]['id'];
+export type Translation = 'kjv';
 
 /** Milestone days that trigger celebration screens */
 export const MILESTONE_DAYS = [7, 14, 21, 30, 60, 90] as const;

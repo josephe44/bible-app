@@ -15,18 +15,11 @@ export interface VerseEntry {
   chapter: number;
   verse: number;
   themes: Theme[];
-  translations: {
-    niv: string;
-    esv: string;
-    kjv: string;
-    nkjv: string;
-    nlt: string;
-    amp: string;
-  };
+  text: string;                // KJV verse text
   lesson: string;              // 200–400 word devotional
   key_takeaway: string;        // 1-sentence practical application
-  context_before: string;      // 2 verses of context before (NIV)
-  context_after: string;       // 2 verses of context after (NIV)
+  context_before: string;      // 2 verses of context before (KJV)
+  context_after: string;       // 2 verses of context after (KJV)
 }
 
 // ─────────────────────────────────────────
@@ -36,7 +29,7 @@ export interface VerseEntry {
 export interface Plan {
   id: number;
   theme: Theme;
-  translation: Translation;
+  translation: 'kjv';
   durationDays: number;
   startDate: string;           // ISO date "YYYY-MM-DD"
   notificationTime: string | null;  // "HH:MM"
