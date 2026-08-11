@@ -26,12 +26,12 @@ export const PLAN_DURATIONS = [
 export type PlanDurationPreset = typeof PLAN_DURATIONS[number]['days'];
 
 export const TRANSLATIONS = [
-  { id: 'niv',  label: 'NIV',  fullName: 'New International Version' },
-  { id: 'esv',  label: 'ESV',  fullName: 'English Standard Version' },
-  { id: 'kjv',  label: 'KJV',  fullName: 'King James Version' },
-  { id: 'nkjv', label: 'NKJV', fullName: 'New King James Version' },
-  { id: 'nlt',  label: 'NLT',  fullName: 'New Living Translation' },
-  { id: 'amp',  label: 'AMP',  fullName: 'Amplified Bible' },
+  { id: 'kjv',   label: 'KJV',   fullName: 'King James Version' },
+  { id: 'web',   label: 'WEB',   fullName: 'World English Bible' },
+  { id: 'asv',   label: 'ASV',   fullName: 'American Standard Version' },
+  { id: 'bbe',   label: 'BBE',   fullName: 'Bible in Basic English' },
+  { id: 'darby', label: 'Darby', fullName: 'Darby Bible' },
+  { id: 'dra',   label: 'DRA',   fullName: 'Douay-Rheims 1899' },
 ] as const;
 
 export type Translation = typeof TRANSLATIONS[number]['id'];

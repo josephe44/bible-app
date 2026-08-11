@@ -1,5 +1,5 @@
 {
-  "name": "bible-app",
+  "name": "eword",
   "main": "expo-router/entry",
   "version": "1.0.0",
   "dependencies": {
@@ -37,6 +37,7 @@
   "scripts": {
     "start": "expo start",
     "reset-project": "node ./scripts/reset-project.js",
+    "fetch-verses": "node ./scripts/fetch-verses.js",
     "android": "expo start --android",
     "ios": "expo start --ios",
     "web": "expo start --web",
