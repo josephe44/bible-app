@@ -1,11 +1,11 @@
 {
   "expo": {
-    "name": "bible-app",
-    "slug": "bible-app",
+    "name": "Eword",
+    "slug": "eword",
     "version": "1.0.0",
     "orientation": "portrait",
     "icon": "./assets/images/icon.png",
-    "scheme": "bibleapp",
+    "scheme": "eword",
     "userInterfaceStyle": "automatic",
     "ios": {
       "icon": "./assets/expo.icon"
