@@ -29,7 +29,7 @@ function RootLayoutNav() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(onboarding)" options={{ animation: 'fade' }} />
         <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
-        <Stack.Screen name="verse" options={{ presentation: 'modal' }} />
+
       </Stack>
     </ThemeProvider>
   );
