@@ -29,7 +29,8 @@ export default function VerseDeepDiveScreen() {
   }
 
   const speak = () => {
-    Speech.speak((verseEntry as any).text, {
+    const textToSpeak = verseEntry.text;
+    Speech.speak(textToSpeak, {
       language: 'en-US',
       rate: 0.85,
     });
@@ -48,9 +49,32 @@ export default function VerseDeepDiveScreen() {
       </View>
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={[TextStyle.verseBody, { color: theme.textPrimary, marginBottom: 24, textAlign: 'center' }]}>
-          "{(verseEntry as any).text}"
+        {verseEntry.context_before ? (
+          <Text style={[TextStyle.lessonBody, { color: theme.textSecondary, marginBottom: 12, opacity: 0.8 }]}>
+            {verseEntry.context_before}
+          </Text>
+        ) : null}
+        
+        <Text style={[TextStyle.verseBody, { color: theme.textPrimary, marginVertical: 16, textAlign: 'center' }]}>
+          "{verseEntry.text}"
         </Text>
+        
+        {verseEntry.context_after ? (
+          <Text style={[TextStyle.lessonBody, { color: theme.textSecondary, marginTop: 12, marginBottom: 32, opacity: 0.8 }]}>
+            {verseEntry.context_after}
+          </Text>
+        ) : <View style={{ height: 32 }} />}
+
+        <View style={[styles.card, { backgroundColor: theme.surface }]}>
+          <Text style={[TextStyle.heading3, { color: theme.textPrimary, marginBottom: 12 }]}>Lesson</Text>
+          <Text style={[TextStyle.lessonBody, { color: theme.textSecondary, marginBottom: 24 }]}>
+            {verseEntry.lesson}
+          </Text>
+          <Text style={[TextStyle.heading3, { color: theme.textPrimary, marginBottom: 12 }]}>Key Takeaway</Text>
+          <Text style={[TextStyle.keyTakeaway, { color: theme.primary }]}>
+            {verseEntry.key_takeaway}
+          </Text>
+        </View>
       </ScrollView>
     </View>
   );
@@ -76,5 +100,10 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
+  },
+  card: {
+    borderRadius: 16,
+    padding: 20,
+    marginTop: 16,
   }
 });

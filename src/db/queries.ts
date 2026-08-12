@@ -72,6 +72,14 @@ export async function updatePlanNotificationTime(
   await db.runAsync('UPDATE plan SET notification_time = ? WHERE id = ?', [time, planId]);
 }
 
+export async function updatePlanTranslation(
+  planId: number,
+  translation: string
+): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync('UPDATE plan SET translation = ? WHERE id = ?', [translation, planId]);
+}
+
 // ─────────────────────────────────────────
 // Plan Days
 // ─────────────────────────────────────────

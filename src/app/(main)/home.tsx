@@ -11,6 +11,7 @@ import { useStreak } from '@/hooks/useStreak';
 import versesData from '@/content/verses.json';
 import { useRouter } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
+import { MilestoneModal } from '@/components/ui/MilestoneModal';
 
 export default function HomeScreen() {
   const { state, markRead, saveJournal } = useApp();
@@ -19,6 +20,7 @@ export default function HomeScreen() {
   const { currentStreak } = useStreak();
   const [journalText, setJournalText] = React.useState('');
   const [isBottomSheetVisible, setBottomSheetVisible] = React.useState(false);
+  const [showMilestone, setShowMilestone] = React.useState(false);
 
   const plan = state.plan;
 
@@ -55,6 +57,9 @@ export default function HomeScreen() {
 
   const handleMarkRead = () => {
     markRead(currentDayNumber);
+    if (!todayPlanDay?.isRead && [7, 14, 21, 30].includes(currentDayNumber)) {
+      setShowMilestone(true);
+    }
   };
 
   const handleJournalSave = () => {
@@ -122,6 +127,12 @@ export default function HomeScreen() {
           </Text>
         </Pressable>
       </ScrollView>
+
+      <MilestoneModal 
+        visible={showMilestone} 
+        day={currentDayNumber} 
+        onClose={() => setShowMilestone(false)} 
+      />
 
       <Modal
         visible={isBottomSheetVisible}

@@ -1,5 +1,5 @@
 import { Tabs } from 'expo-router';
-import { Home, Calendar } from 'lucide-react-native';
+import { Home, Calendar, BookOpen, Settings } from 'lucide-react-native';
 import { useTheme } from '@/hooks/useTheme';
 
 export default function MainLayout() {
@@ -29,6 +29,20 @@ export default function MainLayout() {
         options={{
           title: 'Plan',
           tabBarIcon: ({ color }) => <Calendar size={24} color={color} />
+        }} 
+      />
+      <Tabs.Screen 
+        name="journal" 
+        options={{
+          title: 'Journal',
+          tabBarIcon: ({ color }) => <BookOpen size={24} color={color} />
+        }} 
+      />
+      <Tabs.Screen 
+        name="settings" 
+        options={{
+          title: 'Settings',
+          tabBarIcon: ({ color }) => <Settings size={24} color={color} />
         }} 
       />
     </Tabs>
