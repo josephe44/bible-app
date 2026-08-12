@@ -1,7 +1,7 @@
 import React, { useRef, useState } from 'react';
 import { View, Text, StyleSheet, Dimensions, FlatList, TouchableOpacity } from 'react-native';
 import { useRouter } from 'expo-router';
-import { Image } from 'expo-image';
+import { BookOpen, Sun, TrendingUp } from 'lucide-react-native';
 import Animated, { useAnimatedScrollHandler, useSharedValue, useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { useTheme } from '@/hooks/useTheme';
 import { TextStyle, FontFamily, FontSize } from '@/constants/typography';
@@ -14,19 +14,19 @@ const SLIDES = [
     id: '1',
     title: 'Daily Bread',
     description: 'Start your day with a curated Bible verse designed to inspire and guide you.',
-    image: require('@/assets/images/splash-icon.png'), // placeholder, use splash icon
+    Icon: Sun,
   },
   {
     id: '2',
     title: 'Grow in Faith',
     description: 'Read a short devotional lesson and reflect on its meaning for your life.',
-    image: require('@/assets/images/splash-icon.png'),
+    Icon: BookOpen,
   },
   {
     id: '3',
     title: 'Track Your Journey',
     description: 'Build a habit of daily reading. Set reminders and watch your streak grow.',
-    image: require('@/assets/images/splash-icon.png'),
+    Icon: TrendingUp,
   },
 ];
 
@@ -65,7 +65,9 @@ export default function WelcomeScreen() {
     return (
       <View style={[styles.slide, { width, backgroundColor: theme.background }]}>
         <View style={styles.imageContainer}>
-          <Image source={item.image} style={styles.image} contentFit="contain" />
+          <View style={[styles.iconWrapper, { backgroundColor: theme.primary + '15' }]}>
+            <item.Icon size={100} color={theme.primary} strokeWidth={1.5} />
+          </View>
         </View>
         <View style={styles.textContainer}>
           <Text style={[TextStyle.heading1, { color: theme.textPrimary, textAlign: 'center', marginBottom: 16 }]}>
@@ -145,9 +147,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     width: '100%',
   },
-  image: {
-    width: width * 0.7,
-    height: width * 0.7,
+  iconWrapper: {
+    width: width * 0.5,
+    height: width * 0.5,
+    borderRadius: width * 0.25,
+    justifyContent: 'center',
+    alignItems: 'center',
   },
   textContainer: {
     flex: 0.4,
@@ -156,15 +161,15 @@ const styles = StyleSheet.create({
   },
   footer: {
     paddingHorizontal: 24,
-    paddingBottom: 40,
+    paddingBottom: 24,
     alignItems: 'center',
   },
   pagination: {
     flexDirection: 'row',
-    height: 40,
+    height: 32,
     alignItems: 'center',
     justifyContent: 'center',
-    marginBottom: 20,
+    marginBottom: 16,
   },
   dot: {
     height: 8,
