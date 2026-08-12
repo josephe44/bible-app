@@ -2,16 +2,17 @@ import { ShareCard } from "@/components/ui/ShareCard";
 import { TextStyle } from "@/constants/typography";
 import versesData from "@/content/verses.json";
 import { useApp } from "@/context/AppContext";
-import { getJournalEntry, upsertJournalEntry } from "@/db/queries";
+import { deleteJournalVersion, getJournalEntry, upsertJournalEntry } from "@/db/queries";
 import { useTheme } from "@/hooks/useTheme";
 import { shareVerseCard } from "@/services/shareService";
 import { JournalEntry } from "@/types";
 import { useLocalSearchParams, useRouter } from "expo-router";
 import * as Speech from "expo-speech";
-import { History, Share, Volume2, X } from "lucide-react-native";
+import { History, Share, Volume2, X, Trash2 } from "lucide-react-native";
 import { useEffect, useRef, useState } from "react";
 import {
   ActivityIndicator,
+  Alert,
   KeyboardAvoidingView,
   Modal,
   Platform,
@@ -75,6 +76,26 @@ export default function VerseDeepDiveScreen() {
 
   const handleShare = () => {
     shareVerseCard(shareCardRef);
+  };
+
+  const handleDeleteVersion = (timestamp: string) => {
+    Alert.alert("Delete Version", "Delete this version from history?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: async () => {
+        const planId = state.plan?.id;
+        if (planId && dayNumber) {
+          await deleteJournalVersion(planId, dayNumber, timestamp);
+          const updated = await getJournalEntry(planId, dayNumber);
+          setJournal(updated);
+          if (updated) {
+             setEditText(updated.content);
+          } else {
+             setEditText('');
+             setIsEditing(false);
+          }
+        }
+      }}
+    ]);
   };
 
   const handleSaveEdit = async () => {
@@ -287,14 +308,14 @@ export default function VerseDeepDiveScreen() {
                       onPress={handleSaveEdit}
                       style={[
                         styles.saveBtn,
-                        { backgroundColor: theme.primary },
+                        { backgroundColor: editText.trim() !== (journal?.content.trim() || '') ? theme.primary : theme.surface },
                       ]}
-                      disabled={isSaving}
+                      disabled={isSaving || editText.trim() === (journal?.content.trim() || '')}
                     >
                       {isSaving ? (
                         <ActivityIndicator size="small" color="#fff" />
                       ) : (
-                        <Text style={[TextStyle.label, { color: "#fff" }]}>
+                        <Text style={[TextStyle.label, { color: editText.trim() !== (journal?.content.trim() || '') ? "#fff" : theme.textSecondary }]}>
                           Save
                         </Text>
                       )}
@@ -411,21 +432,26 @@ export default function VerseDeepDiveScreen() {
                     ]}
                   >
                     <View style={styles.historyItemHeader}>
-                      <Text
-                        style={[
-                          TextStyle.caption,
-                          { color: theme.primary, fontWeight: "600" },
-                        ]}
-                      >
-                        {idx === arr.length - 1
-                          ? "Original version"
-                          : "Edited version"}
-                      </Text>
-                      <Text
-                        style={[TextStyle.caption, { color: theme.textMuted }]}
-                      >
-                        {formatDate(ver.timestamp)}
-                      </Text>
+                      <View style={{ flexDirection: 'row', alignItems: 'center' }}>
+                        <Text
+                          style={[
+                            TextStyle.caption,
+                            { color: theme.primary, fontWeight: "600" },
+                          ]}
+                        >
+                          {idx === arr.length - 1
+                            ? "Original version"
+                            : "Edited version"}
+                        </Text>
+                        <Text
+                          style={[TextStyle.caption, { color: theme.textMuted, marginLeft: 8 }]}
+                        >
+                          {formatDate(ver.timestamp)}
+                        </Text>
+                      </View>
+                      <Pressable onPress={() => handleDeleteVersion(ver.timestamp)} style={{ padding: 4 }}>
+                        <Trash2 size={16} color="#ff3b30" />
+                      </Pressable>
                     </View>
                     <Text
                       style={[

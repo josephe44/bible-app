@@ -1,14 +1,14 @@
 import React, { useEffect, useState } from 'react';
 import { 
   View, Text, StyleSheet, TextInput, KeyboardAvoidingView, Platform, 
-  TouchableOpacity, ActivityIndicator, ScrollView
+  TouchableOpacity, ActivityIndicator, ScrollView, Alert
 } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { useTheme } from '@/hooks/useTheme';
 import { TextStyle } from '@/constants/typography';
-import { getNote, upsertNote } from '@/db/queries';
-import { X, Check, History } from 'lucide-react-native';
+import { getNote, upsertNote, deleteNote, deleteNoteVersion } from '@/db/queries';
+import { X, Check, History, Trash2 } from 'lucide-react-native';
 import type { FeedItem } from '@/types';
 
 export default function NoteEditorScreen() {
@@ -22,7 +22,7 @@ export default function NoteEditorScreen() {
   const [showHistory, setShowHistory] = useState(false);
   const [isLoading, setIsLoading] = useState(id !== 'new');
 
-  useEffect(() => {
+  const loadNote = () => {
     if (id !== 'new') {
       getNote(parseInt(id as string, 10))
         .then(note => {
@@ -33,6 +33,10 @@ export default function NoteEditorScreen() {
         })
         .finally(() => setIsLoading(false));
     }
+  };
+
+  useEffect(() => {
+    loadNote();
   }, [id]);
 
   const handleSave = async () => {
@@ -49,6 +53,30 @@ export default function NoteEditorScreen() {
     }
   };
 
+  const handleDeleteNote = () => {
+    Alert.alert("Delete Note", "Are you sure you want to delete this note completely?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: async () => {
+        if (id !== 'new') {
+          await deleteNote(parseInt(id as string, 10));
+          router.back();
+        }
+      }}
+    ]);
+  };
+
+  const handleDeleteVersion = (timestamp: string) => {
+    Alert.alert("Delete Version", "Delete this version from history?", [
+      { text: "Cancel", style: "cancel" },
+      { text: "Delete", style: "destructive", onPress: async () => {
+        if (id !== 'new') {
+          await deleteNoteVersion(parseInt(id as string, 10), timestamp);
+          loadNote();
+        }
+      }}
+    ]);
+  };
+
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor: colors.background, justifyContent: 'center', alignItems: 'center' }]}>
@@ -56,6 +84,8 @@ export default function NoteEditorScreen() {
       </View>
     );
   }
+
+  const hasChanged = noteContent.trim() !== (activeNote?.content.trim() || '');
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top', 'bottom']}>
@@ -80,6 +110,11 @@ export default function NoteEditorScreen() {
 
           {!showHistory ? (
             <View style={{ flexDirection: 'row', alignItems: 'center', gap: 12 }}>
+              {id !== 'new' && (
+                <TouchableOpacity onPress={handleDeleteNote} style={[styles.iconBtn, { backgroundColor: colors.surface }]}>
+                  <Trash2 size={20} color="#ff3b30" />
+                </TouchableOpacity>
+              )}
               {activeNote?.versions && activeNote.versions.length > 0 && (
                 <TouchableOpacity onPress={() => setShowHistory(true)} style={[styles.iconBtn, { backgroundColor: colors.surface }]}>
                   <History size={20} color={colors.textSecondary} />
@@ -87,17 +122,17 @@ export default function NoteEditorScreen() {
               )}
               <TouchableOpacity 
                 onPress={handleSave} 
-                disabled={isSaving || !noteContent.trim()}
+                disabled={isSaving || !noteContent.trim() || !hasChanged}
                 style={[
                   styles.saveBtn, 
-                  { backgroundColor: noteContent.trim() ? colors.primary : colors.surface },
+                  { backgroundColor: noteContent.trim() && hasChanged ? colors.primary : colors.surface },
                   isSaving && { opacity: 0.7 }
                 ]}
               >
                 {isSaving ? (
                   <ActivityIndicator color="#fff" size="small" />
                 ) : (
-                  <Check size={20} color={noteContent.trim() ? '#fff' : colors.textSecondary} />
+                  <Check size={20} color={noteContent.trim() && hasChanged ? '#fff' : colors.textSecondary} />
                 )}
               </TouchableOpacity>
             </View>
@@ -110,9 +145,14 @@ export default function NoteEditorScreen() {
           <ScrollView contentContainerStyle={{ padding: 24 }}>
             {activeNote.versions?.map((v, i) => (
               <View key={i} style={{ marginBottom: 24, paddingBottom: 24, borderBottomWidth: 1, borderBottomColor: colors.border }}>
-                <Text style={[TextStyle.caption, { color: colors.textSecondary, marginBottom: 8 }]}>
-                  {new Date(v.timestamp).toLocaleString()}
-                </Text>
+                <View style={{ flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 8 }}>
+                  <Text style={[TextStyle.caption, { color: colors.textSecondary }]}>
+                    {new Date(v.timestamp).toLocaleString()}
+                  </Text>
+                  <TouchableOpacity onPress={() => handleDeleteVersion(v.timestamp)}>
+                    <Trash2 size={16} color="#ff3b30" />
+                  </TouchableOpacity>
+                </View>
                 <Text style={[TextStyle.lessonBody, { color: colors.textPrimary }]}>
                   {v.content}
                 </Text>

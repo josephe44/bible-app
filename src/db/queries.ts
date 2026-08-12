@@ -202,6 +202,9 @@ export async function upsertJournalEntry(
   const existing = await getJournalEntry(planId, dayNumber);
   
   if (existing) {
+    if (existing.content.trim() === content.trim()) {
+      return; // No changes made, do not save a new version
+    }
     const versions = existing.versions || [];
     versions.push({ content, timestamp: now });
     const versionsJson = JSON.stringify(versions);
@@ -290,10 +293,13 @@ export async function upsertNote(
   const now = new Date().toISOString();
   
   if (noteId) {
-    const existing = await db.getFirstAsync<{ versions: string | null }>(
-      'SELECT versions FROM notes WHERE id = ?', [noteId]
+    const existing = await db.getFirstAsync<{ content: string, versions: string | null }>(
+      'SELECT content, versions FROM notes WHERE id = ?', [noteId]
     );
     if (existing) {
+      if (existing.content.trim() === content.trim()) {
+        return; // No changes made, do not save a new version
+      }
       let versions = [];
       try {
         if (existing.versions) versions = JSON.parse(existing.versions);
@@ -340,6 +346,47 @@ export async function getNote(id: number): Promise<FeedItem | null> {
     updatedAt: r.updated_at,
     versions: parsedVersions,
   };
+}
+
+export async function deleteNote(id: number): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync('DELETE FROM notes WHERE id = ?', [id]);
+}
+
+export async function deleteNoteVersion(id: number, timestamp: string): Promise<void> {
+  const db = await getDatabase();
+  const r = await db.getFirstAsync<{ versions: string | null }>('SELECT versions FROM notes WHERE id = ?', [id]);
+  if (!r || !r.versions) return;
+  
+  let versions: {content: string, timestamp: string}[] = [];
+  try { versions = JSON.parse(r.versions); } catch(e) {}
+  
+  versions = versions.filter(v => v.timestamp !== timestamp);
+  const versionsJson = JSON.stringify(versions);
+  const latestContent = versions.length > 0 ? versions[versions.length - 1].content : '';
+  
+  await db.runAsync(
+    'UPDATE notes SET versions = ?, content = ? WHERE id = ?',
+    [versionsJson, latestContent, id]
+  );
+}
+
+export async function deleteJournalVersion(planId: number, dayNumber: number, timestamp: string): Promise<void> {
+  const db = await getDatabase();
+  const r = await db.getFirstAsync<{ versions: string | null }>('SELECT versions FROM journal WHERE plan_id = ? AND day_number = ?', [planId, dayNumber]);
+  if (!r || !r.versions) return;
+  
+  let versions: {content: string, timestamp: string}[] = [];
+  try { versions = JSON.parse(r.versions); } catch(e) {}
+  
+  versions = versions.filter(v => v.timestamp !== timestamp);
+  const versionsJson = JSON.stringify(versions);
+  const latestContent = versions.length > 0 ? versions[versions.length - 1].content : '';
+  
+  await db.runAsync(
+    'UPDATE journal SET versions = ?, content = ? WHERE plan_id = ? AND day_number = ?',
+    [versionsJson, latestContent, planId, dayNumber]
+  );
 }
 
 import type { FeedItem } from '@/types';
