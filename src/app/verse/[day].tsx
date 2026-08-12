@@ -92,9 +92,15 @@ export default function VerseDeepDiveScreen() {
     refreshPlan();
   };
 
+  const scrollViewRef = useRef<ScrollView>(null);
+
   const startEditing = () => {
     setEditText(journal?.content || "");
     setIsEditing(true);
+    // Add a slight delay to allow the layout to update, then scroll down
+    setTimeout(() => {
+      scrollViewRef.current?.scrollToEnd({ animated: true });
+    }, 150);
   };
 
   const formatDate = (isoString: string) => {
@@ -145,8 +151,10 @@ export default function VerseDeepDiveScreen() {
         behavior={Platform.OS === "ios" ? "padding" : undefined}
       >
         <ScrollView
+          ref={scrollViewRef}
           contentContainerStyle={styles.scrollContent}
           showsVerticalScrollIndicator={false}
+          keyboardShouldPersistTaps="handled"
         >
           {verseEntry.context_before ? (
             <Text
@@ -245,6 +253,11 @@ export default function VerseDeepDiveScreen() {
                     onChangeText={setEditText}
                     multiline
                     autoFocus
+                    onFocus={() => {
+                      setTimeout(() => {
+                        scrollViewRef.current?.scrollToEnd({ animated: true });
+                      }, 100);
+                    }}
                     placeholder="Write your reflection..."
                     placeholderTextColor={theme.textMuted}
                   />
