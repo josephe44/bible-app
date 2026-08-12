@@ -15,6 +15,7 @@ export default function MainLayout() {
       <NativeTabs.Trigger name="home">
         <NativeTabs.Trigger.Icon
           sf={{ default: "house", selected: "house.fill" }}
+          md={{ default: "home", selected: "home" }}
         />
         <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
@@ -22,6 +23,7 @@ export default function MainLayout() {
       <NativeTabs.Trigger name="plan">
         <NativeTabs.Trigger.Icon
           sf={{ default: "flame", selected: "flame.fill" }}
+          md={{ default: "local_fire_department", selected: "local_fire_department" }}
         />
         <NativeTabs.Trigger.Label>Plan</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
@@ -29,6 +31,7 @@ export default function MainLayout() {
       <NativeTabs.Trigger name="journal">
         <NativeTabs.Trigger.Icon
           sf={{ default: "book", selected: "book.fill" }}
+          md={{ default: "book", selected: "book" }}
         />
         <NativeTabs.Trigger.Label>Journal</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
@@ -36,6 +39,7 @@ export default function MainLayout() {
       <NativeTabs.Trigger name="settings">
         <NativeTabs.Trigger.Icon
           sf={{ default: "gearshape", selected: "gearshape.fill" }}
+          md={{ default: "settings", selected: "settings" }}
         />
         <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
       </NativeTabs.Trigger>
