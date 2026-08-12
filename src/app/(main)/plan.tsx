@@ -94,16 +94,9 @@ export default function PlanScreen() {
               <HeatMap 
                 readDates={historicalReadDates} 
                 year={currentYear} 
-                month={currentMonth} 
+                month={currentMonth}
+                onExpand={() => setIsHistoryModalVisible(true)}
               />
-              <TouchableOpacity 
-                style={[styles.historyButton, { backgroundColor: colors.primary + '15' }]} 
-                onPress={() => setIsHistoryModalVisible(true)}
-                activeOpacity={0.7}
-              >
-                <BarChart2 size={16} color={colors.primary} />
-                <Text style={[TextStyle.label, { color: colors.primary, marginLeft: 8 }]}>View Full History</Text>
-              </TouchableOpacity>
             </View>
 
             <View style={[styles.progressCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
@@ -178,14 +171,6 @@ const styles = StyleSheet.create({
   subtitle: { marginTop: 4, letterSpacing: 0.5 },
   content: { marginTop: 8 },
   section: { marginBottom: 8 },
-  historyButton: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 12,
-    borderRadius: 12,
-    marginTop: 12,
-  },
   progressCard: {
     flexDirection: 'row',
     alignItems: 'center',

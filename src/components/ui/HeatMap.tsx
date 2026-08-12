@@ -2,16 +2,17 @@ import React, { useMemo, useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { TextStyle } from '@/constants/typography';
-import { Flame } from 'lucide-react-native';
+import { Flame, Maximize2 } from 'lucide-react-native';
 
 interface HeatMapProps {
   readDates: string[]; // Array of ISO date strings
   year: number;
   month: number; // 0-11
   showHeader?: boolean;
+  onExpand?: () => void;
 }
 
-export function HeatMap({ readDates, year, month, showHeader = true }: HeatMapProps) {
+export function HeatMap({ readDates, year, month, showHeader = true, onExpand }: HeatMapProps) {
   const colors = useTheme();
   const [selectedDay, setSelectedDay] = useState<{ date: string; status: string } | null>(null);
 
@@ -66,8 +67,15 @@ export function HeatMap({ readDates, year, month, showHeader = true }: HeatMapPr
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       {showHeader && (
         <View style={styles.header}>
-          <Flame size={18} color={colors.streak} style={{ marginRight: 8 }} />
-          <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>{monthName} Streak</Text>
+          <View style={styles.headerTitle}>
+            <Flame size={18} color={colors.streak} style={{ marginRight: 8 }} />
+            <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>{monthName} Streak</Text>
+          </View>
+          {onExpand && (
+            <TouchableOpacity onPress={onExpand} hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}>
+              <Maximize2 size={18} color={colors.textSecondary} />
+            </TouchableOpacity>
+          )}
         </View>
       )}
       
@@ -114,7 +122,12 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
+    justifyContent: 'space-between',
     marginBottom: 12,
+  },
+  headerTitle: {
+    flexDirection: 'row',
+    alignItems: 'center',
   },
   grid: {
     flexDirection: 'row',
