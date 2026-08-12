@@ -1,50 +1,44 @@
-import { Tabs } from 'expo-router';
-import { Home, Calendar, BookOpen, Settings } from 'lucide-react-native';
-import { useTheme } from '@/hooks/useTheme';
+import { useTheme } from "@/hooks/useTheme";
+import { NativeTabs } from "expo-router/unstable-native-tabs";
 
 export default function MainLayout() {
   const colors = useTheme();
-  
+
   return (
-    <Tabs screenOptions={{ 
-      headerShown: false,
-      tabBarStyle: { 
-        backgroundColor: colors.background, 
-        borderTopColor: colors.border,
-        elevation: 0,
-        shadowOpacity: 0,
-      },
-      tabBarActiveTintColor: colors.primary,
-      tabBarInactiveTintColor: colors.textSecondary,
-    }}>
-      <Tabs.Screen 
-        name="home" 
-        options={{
-          title: 'Today',
-          tabBarIcon: ({ color }) => <Home size={24} color={color} />
-        }} 
-      />
-      <Tabs.Screen 
-        name="plan" 
-        options={{
-          title: 'Plan',
-          tabBarIcon: ({ color }) => <Calendar size={24} color={color} />
-        }} 
-      />
-      <Tabs.Screen 
-        name="journal" 
-        options={{
-          title: 'Journal',
-          tabBarIcon: ({ color }) => <BookOpen size={24} color={color} />
-        }} 
-      />
-      <Tabs.Screen 
-        name="settings" 
-        options={{
-          title: 'Settings',
-          tabBarIcon: ({ color }) => <Settings size={24} color={color} />
-        }} 
-      />
-    </Tabs>
+    <NativeTabs
+      backgroundColor={colors.background}
+      iconColor={{
+        default: colors.textSecondary,
+        selected: colors.primary,
+      }}
+    >
+      <NativeTabs.Trigger name="home">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "house", selected: "house.fill" }}
+        />
+        <NativeTabs.Trigger.Label>Today</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="plan">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "flame", selected: "flame.fill" }}
+        />
+        <NativeTabs.Trigger.Label>Plan</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="journal">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "book", selected: "book.fill" }}
+        />
+        <NativeTabs.Trigger.Label>Journal</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+
+      <NativeTabs.Trigger name="settings">
+        <NativeTabs.Trigger.Icon
+          sf={{ default: "gearshape", selected: "gearshape.fill" }}
+        />
+        <NativeTabs.Trigger.Label>Settings</NativeTabs.Trigger.Label>
+      </NativeTabs.Trigger>
+    </NativeTabs>
   );
 }
