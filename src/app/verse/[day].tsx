@@ -85,16 +85,7 @@ export default function VerseDeepDiveScreen() {
           </Text>
         ) : <View style={{ height: 32 }} />}
 
-        <View style={[styles.card, { backgroundColor: theme.surface }]}>
-          <Text style={[TextStyle.heading3, { color: theme.textPrimary, marginBottom: 12 }]}>Lesson</Text>
-          <Text style={[TextStyle.lessonBody, { color: theme.textSecondary, marginBottom: 24 }]}>
-            {verseEntry.lesson}
-          </Text>
-          <Text style={[TextStyle.heading3, { color: theme.textPrimary, marginBottom: 12 }]}>Key Takeaway</Text>
-          <Text style={[TextStyle.keyTakeaway, { color: theme.primary }]}>
-            {verseEntry.key_takeaway}
-          </Text>
-        </View>
+        {/* Lesson and Key Takeaway have been hidden per user request */}
 
         {planDay?.journalEntry && (
           <View style={[styles.card, { backgroundColor: theme.surface, marginTop: 24, borderWidth: 1, borderColor: theme.border }]}>

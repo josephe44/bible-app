@@ -1,11 +1,11 @@
 import React, { useState } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Switch, Alert, Modal, Pressable, Appearance } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { usePlan, useApp } from '@/context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextStyle } from '@/constants/typography';
-import { Bell, Globe, Moon, Trash2, ChevronRight } from 'lucide-react-native';
-import { updatePlanTranslation, deleteActivePlan } from '@/db/queries';
+import { Bell, Globe, Moon, Trash2, ChevronRight, X, Check } from 'lucide-react-native';
+import { updatePlanTranslation, deleteActivePlan, updatePlanNotificationTime } from '@/db/queries';
 import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
@@ -13,14 +13,26 @@ export default function SettingsScreen() {
   const plan = usePlan();
   const router = useRouter();
   const { refreshPlan } = useApp();
-  const [translation, setTranslation] = useState(plan?.translation || 'niv');
+  
+  // Default to kjv if not set
+  const [translation, setTranslation] = useState(plan?.translation || 'kjv');
+  const [isTranslationSheetVisible, setTranslationSheetVisible] = useState(false);
+  const [isReminderSheetVisible, setReminderSheetVisible] = useState(false);
 
-  const handleTranslationChange = async () => {
+  const handleTranslationSelect = async (selected: string) => {
+    if (selected !== 'kjv') return; // Others coming soon
     if (!plan) return;
-    const nextTrans = translation === 'niv' ? 'esv' : 'niv'; // Simple toggle for now
-    await updatePlanTranslation(plan.id, nextTrans);
-    setTranslation(nextTrans);
+    await updatePlanTranslation(plan.id, selected);
+    setTranslation(selected);
     refreshPlan();
+    setTranslationSheetVisible(false);
+  };
+
+  const handleReminderSelect = async (time: string | null) => {
+    if (!plan) return;
+    await updatePlanNotificationTime(plan.id, time);
+    refreshPlan();
+    setReminderSheetVisible(false);
   };
 
   const handleResetPlan = () => {
@@ -42,11 +54,17 @@ export default function SettingsScreen() {
     );
   };
 
-  const OptionRow = ({ icon: Icon, title, value, onPress, isDestructive = false }: any) => (
+  const toggleDarkMode = () => {
+    const newScheme = colors.isDark ? 'light' : 'dark';
+    Appearance.setColorScheme(newScheme);
+  };
+
+  const OptionRow = ({ icon: Icon, title, value, onPress, isDestructive = false, isSwitch = false }: any) => (
     <TouchableOpacity 
       style={[styles.row, { borderBottomColor: colors.border }]} 
       onPress={onPress}
-      disabled={!onPress}
+      disabled={!onPress && !isSwitch}
+      activeOpacity={0.7}
     >
       <View style={styles.rowLeft}>
         <View style={[styles.iconBox, { backgroundColor: isDestructive ? colors.error + '20' : colors.primary + '20' }]}>
@@ -62,7 +80,11 @@ export default function SettingsScreen() {
             {value}
           </Text>
         )}
-        {onPress && <ChevronRight size={20} color={colors.textMuted} />}
+        {isSwitch ? (
+          <Switch value={colors.isDark} onValueChange={toggleDarkMode} />
+        ) : onPress ? (
+          <ChevronRight size={20} color={colors.textMuted} />
+        ) : null}
       </View>
     </TouchableOpacity>
   );
@@ -81,25 +103,19 @@ export default function SettingsScreen() {
               icon={Globe} 
               title="Bible Translation" 
               value={translation.toUpperCase()} 
-              onPress={handleTranslationChange} 
+              onPress={() => setTranslationSheetVisible(true)} 
             />
             <OptionRow 
               icon={Bell} 
               title="Daily Reminder" 
               value={plan?.notificationTime || "Off"} 
-              onPress={() => Alert.alert("Coming Soon", "Notification rescheduler will be here.")} 
+              onPress={() => setReminderSheetVisible(true)} 
             />
-            <View style={[styles.row, { borderBottomWidth: 0 }]}>
-              <View style={styles.rowLeft}>
-                <View style={[styles.iconBox, { backgroundColor: colors.primary + '20' }]}>
-                  <Moon size={20} color={colors.primary} />
-                </View>
-                <Text style={[{ color: colors.textPrimary, marginLeft: 12 }, TextStyle.label]}>
-                  Dark Mode
-                </Text>
-              </View>
-              <Switch value={colors.isDark} disabled />
-            </View>
+            <OptionRow 
+              icon={Moon} 
+              title="Dark Mode" 
+              isSwitch
+            />
           </View>
         </View>
 
@@ -115,52 +131,85 @@ export default function SettingsScreen() {
           </View>
         </View>
       </ScrollView>
+
+      {/* Translation Bottom Sheet */}
+      <Modal visible={isTranslationSheetVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setTranslationSheetVisible(false)} />
+          <View style={[styles.bottomSheet, { backgroundColor: colors.surface }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>Bible Translation</Text>
+              <Pressable onPress={() => setTranslationSheetVisible(false)}>
+                <X size={24} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+            
+            <TouchableOpacity style={[styles.sheetItem, { borderBottomColor: colors.border }]} onPress={() => handleTranslationSelect('kjv')}>
+              <Text style={[TextStyle.label, { color: colors.textPrimary }]}>King James Version (KJV)</Text>
+              {translation === 'kjv' && <Check size={20} color={colors.primary} />}
+            </TouchableOpacity>
+
+            <TouchableOpacity style={[styles.sheetItem, { borderBottomColor: colors.border }]} activeOpacity={1}>
+              <Text style={[TextStyle.label, { color: colors.textMuted }]}>New International Version (NIV)</Text>
+              <View style={[styles.badge, { backgroundColor: colors.primary + '20' }]}>
+                <Text style={[{ color: colors.primary, fontSize: 10, fontWeight: 'bold' }]}>COMING SOON</Text>
+              </View>
+            </TouchableOpacity>
+
+            <TouchableOpacity style={styles.sheetItem} activeOpacity={1}>
+              <Text style={[TextStyle.label, { color: colors.textMuted }]}>English Standard Version (ESV)</Text>
+              <View style={[styles.badge, { backgroundColor: colors.primary + '20' }]}>
+                <Text style={[{ color: colors.primary, fontSize: 10, fontWeight: 'bold' }]}>COMING SOON</Text>
+              </View>
+            </TouchableOpacity>
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reminder Bottom Sheet */}
+      <Modal visible={isReminderSheetVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <Pressable style={styles.modalBackdrop} onPress={() => setReminderSheetVisible(false)} />
+          <View style={[styles.bottomSheet, { backgroundColor: colors.surface }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>Daily Reminder</Text>
+              <Pressable onPress={() => setReminderSheetVisible(false)}>
+                <X size={24} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+            
+            {['06:00', '07:00', '08:00', '09:00', '20:00', null].map((time, idx, arr) => (
+              <TouchableOpacity 
+                key={time || 'off'} 
+                style={[styles.sheetItem, idx !== arr.length - 1 && { borderBottomColor: colors.border }]} 
+                onPress={() => handleReminderSelect(time)}
+              >
+                <Text style={[TextStyle.label, { color: colors.textPrimary }]}>{time ? time : 'Off'}</Text>
+                {plan?.notificationTime === time && <Check size={20} color={colors.primary} />}
+              </TouchableOpacity>
+            ))}
+          </View>
+        </View>
+      </Modal>
     </SafeAreaView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollContent: {
-    padding: 24,
-  },
-  title: {
-    marginBottom: 24,
-  },
-  section: {
-    marginBottom: 32,
-  },
-  sectionTitle: {
-    marginBottom: 8,
-    marginLeft: 12,
-    letterSpacing: 1,
-  },
-  card: {
-    borderRadius: 16,
-    overflow: 'hidden',
-  },
-  row: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    padding: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-  },
-  rowLeft: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  rowRight: {
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  iconBox: {
-    width: 36,
-    height: 36,
-    borderRadius: 10,
-    alignItems: 'center',
-    justifyContent: 'center',
-  }
+  container: { flex: 1 },
+  scrollContent: { padding: 24 },
+  title: { marginBottom: 24 },
+  section: { marginBottom: 32 },
+  sectionTitle: { marginBottom: 8, marginLeft: 12, letterSpacing: 1 },
+  card: { borderRadius: 16, overflow: 'hidden' },
+  row: { flexDirection: 'row', alignItems: 'center', justifyContent: 'space-between', padding: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  rowLeft: { flexDirection: 'row', alignItems: 'center' },
+  rowRight: { flexDirection: 'row', alignItems: 'center' },
+  iconBox: { width: 36, height: 36, borderRadius: 10, alignItems: 'center', justifyContent: 'center' },
+  modalOverlay: { flex: 1, justifyContent: 'flex-end' },
+  modalBackdrop: { position: 'absolute', top: 0, bottom: 0, left: 0, right: 0, backgroundColor: 'rgba(0,0,0,0.4)' },
+  bottomSheet: { borderTopLeftRadius: 32, borderTopRightRadius: 32, padding: 24, paddingBottom: 40, shadowColor: '#000', shadowOffset: { width: 0, height: -4 }, shadowOpacity: 0.1, shadowRadius: 12, elevation: 10 },
+  sheetHeader: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', marginBottom: 24 },
+  sheetItem: { flexDirection: 'row', justifyContent: 'space-between', alignItems: 'center', paddingVertical: 16, borderBottomWidth: StyleSheet.hairlineWidth },
+  badge: { paddingHorizontal: 8, paddingVertical: 4, borderRadius: 8 }
 });
