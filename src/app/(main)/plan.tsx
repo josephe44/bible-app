@@ -41,37 +41,50 @@ export default function PlanScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-        <Text style={[styles.title, { color: colors.textPrimary }, TextStyle.heading1]}>
-          Your Plan
-        </Text>
-        
-        {!plan ? (
-          <Text style={{ color: colors.textSecondary }}>Loading plan...</Text>
-        ) : (
-          <View style={styles.content}>
-            <Text style={{ color: colors.textSecondary, marginBottom: 20 }}>
+        <View style={styles.headerRow}>
+          <Text style={[styles.title, { color: colors.textPrimary }, TextStyle.heading1]}>
+            Your Plan
+          </Text>
+          {plan && (
+            <Text style={[styles.subtitle, { color: colors.textSecondary }, TextStyle.caption]}>
               {plan.theme.charAt(0).toUpperCase() + plan.theme.slice(1)} • {plan.durationDays} Days
             </Text>
-            <View style={styles.progressContainer}>
-              <ProgressRing progress={progress} size={140} strokeWidth={14} />
-              <Text style={[{ color: colors.textSecondary, marginTop: 16 }, TextStyle.caption]}>
-                {readDays} of {plan.durationDays} days completed
-              </Text>
+          )}
+        </View>
+        
+        {!plan ? (
+          <Text style={{ color: colors.textSecondary, marginTop: 24 }}>Loading plan...</Text>
+        ) : (
+          <View style={styles.content}>
+            {/* 1. Calendar (moved to top) */}
+            <View style={styles.section}>
+              <DayCalendarStrip 
+                days={plan.days} 
+                currentDay={currentDay} 
+                onDayPress={(day) => {
+                  router.push(`/verse/${day}`);
+                }} 
+              />
             </View>
 
-            <HeatMap readDates={historicalReadDates} />
+            {/* 2. HeatMap (Streak) */}
+            <View style={styles.section}>
+              <HeatMap readDates={historicalReadDates} />
+            </View>
 
-            <Text style={[{ color: colors.textPrimary, marginTop: 32, marginBottom: 8, paddingHorizontal: 24 }, TextStyle.heading3]}>
-              Calendar
-            </Text>
-            <DayCalendarStrip 
-              days={plan.days} 
-              currentDay={currentDay} 
-              onDayPress={(day) => {
-                // For Sprint 3: Navigate to past day in review mode
-                router.push(`/verse/${day}`);
-              }} 
-            />
+            {/* 3. Progress (reduced size and put in a card) */}
+            <View style={[styles.progressCard, { backgroundColor: colors.surface, borderColor: colors.border }]}>
+              <View style={styles.progressInfo}>
+                <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>Current Plan</Text>
+                <Text style={[TextStyle.caption, { color: colors.textSecondary, marginTop: 4 }]}>
+                  {readDays} out of {plan.durationDays} days completed
+                </Text>
+                <Text style={[TextStyle.heading2, { color: colors.primary, marginTop: 8 }]}>
+                  {Math.round(progress * 100)}%
+                </Text>
+              </View>
+              <ProgressRing progress={progress} size={80} strokeWidth={8} />
+            </View>
           </View>
         )}
       </ScrollView>
@@ -85,17 +98,35 @@ const styles = StyleSheet.create({
   },
   scrollContent: {
     padding: 24,
+    paddingBottom: 40,
+  },
+  headerRow: {
+    marginBottom: 8,
   },
   title: {
     fontSize: 28,
-    marginBottom: 8,
+  },
+  subtitle: {
+    marginTop: 4,
+    letterSpacing: 0.5,
   },
   content: {
-    marginTop: 16,
+    marginTop: 8,
   },
-  progressContainer: {
+  section: {
+    marginBottom: 24,
+  },
+  progressCard: {
+    flexDirection: 'row',
     alignItems: 'center',
-    justifyContent: 'center',
-    paddingVertical: 24,
+    justifyContent: 'space-between',
+    padding: 24,
+    borderRadius: 20,
+    borderWidth: 1,
+    marginTop: 8,
+  },
+  progressInfo: {
+    flex: 1,
+    marginRight: 16,
   }
 });

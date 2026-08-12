@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { TextStyle } from '@/constants/typography';
 import { Flame } from 'lucide-react-native';
@@ -27,7 +27,7 @@ export function HeatMap({ readDates }: HeatMapProps) {
   // Generate a grid of 52 columns x 7 rows
   const weeks = useMemo(() => {
     const numWeeks = 52;
-    const grid: { dateStr: string; isRead: boolean; isFuture: boolean }[][] = [];
+    const grid: { dateStr: string; formattedDate: string; isRead: boolean; isFuture: boolean }[][] = [];
     
     const now = new Date();
     // Start from the most recent Saturday to align weeks properly (Sun-Sat)
@@ -45,9 +45,13 @@ export function HeatMap({ readDates }: HeatMapProps) {
       const week = [];
       for (let d = 0; d < 7; d++) {
         const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+        
+        // e.g. "June 10, 2026"
+        const formattedDate = currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
+        
         const isRead = readSet.has(dateStr);
         const isFuture = currentDate.getTime() > now.getTime();
-        week.push({ dateStr, isRead, isFuture });
+        week.push({ dateStr, formattedDate, isRead, isFuture });
         
         currentDate.setDate(currentDate.getDate() + 1);
       }
@@ -55,6 +59,12 @@ export function HeatMap({ readDates }: HeatMapProps) {
     }
     return grid;
   }, [readSet]);
+
+  const handleCellPress = (day: any) => {
+    if (day.isFuture) return;
+    const status = day.isRead ? "Read 🔥" : "Not Read";
+    Alert.alert(day.formattedDate, `Status: ${status}`);
+  };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
@@ -68,8 +78,11 @@ export function HeatMap({ readDates }: HeatMapProps) {
           {weeks.map((week, wIdx) => (
             <View key={`week-${wIdx}`} style={styles.column}>
               {week.map((day, dIdx) => (
-                <View 
+                <TouchableOpacity 
                   key={day.dateStr} 
+                  onPress={() => handleCellPress(day)}
+                  activeOpacity={0.7}
+                  disabled={day.isFuture}
                   style={[
                     styles.cell, 
                     { 
@@ -86,13 +99,6 @@ export function HeatMap({ readDates }: HeatMapProps) {
           ))}
         </View>
       </ScrollView>
-      <View style={styles.legend}>
-        <Text style={[TextStyle.caption, { color: colors.textSecondary }]}>Less</Text>
-        <View style={[styles.cell, { backgroundColor: colors.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)', marginHorizontal: 4 }]} />
-        <View style={[styles.cell, { backgroundColor: colors.streak, opacity: 0.5, marginHorizontal: 4 }]} />
-        <View style={[styles.cell, { backgroundColor: colors.streak, marginHorizontal: 4 }]} />
-        <Text style={[TextStyle.caption, { color: colors.textSecondary }]}>More</Text>
-      </View>
     </View>
   );
 }
@@ -101,7 +107,7 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
     padding: 20,
-    marginTop: 24,
+    marginTop: 16,
   },
   header: {
     flexDirection: 'row',
@@ -130,11 +136,5 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 4,
     elevation: 2,
-  },
-  legend: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'flex-end',
-    marginTop: 16,
   }
 });
