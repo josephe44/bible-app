@@ -142,6 +142,14 @@ export async function markDayRead(planId: number, dayNumber: number): Promise<vo
   );
 }
 
+export async function getAllReadDates(): Promise<string[]> {
+  const db = await getDatabase();
+  const rows = await db.getAllAsync<{ read_at: string }>(
+    'SELECT read_at FROM plan_days WHERE is_read = 1 AND read_at IS NOT NULL'
+  );
+  return rows.map(r => r.read_at);
+}
+
 // ─────────────────────────────────────────
 // Journal
 // ─────────────────────────────────────────

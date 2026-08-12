@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useEffect, useState } from 'react';
 import { View, Text, StyleSheet, ScrollView } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { usePlan } from '@/context/AppContext';
@@ -6,13 +6,21 @@ import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextStyle } from '@/constants/typography';
 import { ProgressRing } from '@/components/ui/ProgressRing';
 import { DayCalendarStrip } from '@/components/ui/DayCalendarStrip';
+import { HeatMap } from '@/components/ui/HeatMap';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
+import { getAllReadDates } from '@/db/queries';
 
 export default function PlanScreen() {
   const colors = useTheme();
   const plan = usePlan();
   const router = useRouter();
+  const [historicalReadDates, setHistoricalReadDates] = useState<string[]>([]);
+
+  useEffect(() => {
+    // Fetch all historical read dates from the DB
+    getAllReadDates().then(setHistoricalReadDates).catch(console.error);
+  }, [plan]); // Re-fetch if plan updates (e.g., mark a day as read)
 
   const { readDays, progress, currentDay } = useMemo(() => {
     if (!plan) return { readDays: 0, progress: 0, currentDay: 1 };
@@ -32,7 +40,7 @@ export default function PlanScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         <Text style={[styles.title, { color: colors.textPrimary }, TextStyle.heading1]}>
           Your Plan
         </Text>
@@ -50,6 +58,8 @@ export default function PlanScreen() {
                 {readDays} of {plan.durationDays} days completed
               </Text>
             </View>
+
+            <HeatMap readDates={historicalReadDates} />
 
             <Text style={[{ color: colors.textPrimary, marginTop: 32, marginBottom: 8, paddingHorizontal: 24 }, TextStyle.heading3]}>
               Calendar
