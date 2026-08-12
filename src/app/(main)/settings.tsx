@@ -29,9 +29,25 @@ import {
   Text,
   TouchableOpacity,
   View,
+  Platform,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
 import { storage } from "@/utils/storage";
+
+import DateTimePicker from '@react-native-community/datetimepicker';
+
+function formatTime12Hour(time24: string | null) {
+  if (!time24) return "Off";
+  if (time24 === "Custom...") return "Custom...";
+  const parts = time24.split(':');
+  if (parts.length !== 2) return time24;
+  let hour = parseInt(parts[0], 10);
+  const m = parts[1];
+  const ampm = hour >= 12 ? 'PM' : 'AM';
+  hour = hour % 12;
+  if (hour === 0) hour = 12;
+  return `${hour.toString().padStart(2, '0')}:${m} ${ampm}`;
+}
 
 export default function SettingsScreen() {
   const colors = useTheme();
@@ -43,6 +59,9 @@ export default function SettingsScreen() {
   const [isTranslationSheetVisible, setTranslationSheetVisible] =
     useState(false);
   const [isReminderSheetVisible, setReminderSheetVisible] = useState(false);
+  
+  const [showTimePicker, setShowTimePicker] = useState(false);
+  const [timePickerDate, setTimePickerDate] = useState(new Date());
 
   const handleTranslationSelect = async (selected: string) => {
     if (selected !== "kjv") return;
@@ -58,6 +77,15 @@ export default function SettingsScreen() {
     await updatePlanNotificationTime(plan.id, time);
     refreshPlan();
     setReminderSheetVisible(false);
+  };
+
+  const onTimeChange = (event: import('@react-native-community/datetimepicker').DateTimePickerEvent, selectedDate?: Date) => {
+    setShowTimePicker(false);
+    if (selectedDate) {
+      const hours = selectedDate.getHours().toString().padStart(2, '0');
+      const minutes = selectedDate.getMinutes().toString().padStart(2, '0');
+      handleReminderSelect(`${hours}:${minutes}`);
+    }
   };
 
   const handleResetPlan = () => {
@@ -200,7 +228,7 @@ export default function SettingsScreen() {
             <OptionRow
               icon={Bell}
               title="Daily Reminder"
-              value={plan?.notificationTime || "Off"}
+              value={formatTime12Hour(plan?.notificationTime || null)}
               onPress={() => setReminderSheetVisible(true)}
             />
             {plan?.notificationTime && (
@@ -242,6 +270,66 @@ export default function SettingsScreen() {
         </View>
       </ScrollView>
 
+      {/* Custom Time Picker Bottom Sheet (iOS) or Dialog (Android) */}
+      {Platform.OS === 'ios' ? (
+        <Modal visible={showTimePicker} transparent animationType="slide">
+          <View style={styles.modalOverlay}>
+            <Pressable
+              style={styles.modalBackdrop}
+              onPress={() => setShowTimePicker(false)}
+            />
+            <View
+              style={[
+                styles.bottomSheet,
+                { backgroundColor: colors.surface, paddingBottom: 40 },
+              ]}
+            >
+              <View style={styles.sheetHeader}>
+                <TouchableOpacity onPress={() => setShowTimePicker(false)}>
+                  <Text style={[TextStyle.lessonBody, { color: colors.textSecondary }]}>Cancel</Text>
+                </TouchableOpacity>
+                <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>
+                  Select Time
+                </Text>
+                <TouchableOpacity onPress={() => {
+                  const hours = timePickerDate.getHours().toString().padStart(2, '0');
+                  const minutes = timePickerDate.getMinutes().toString().padStart(2, '0');
+                  handleReminderSelect(`${hours}:${minutes}`);
+                  setShowTimePicker(false);
+                }}>
+                  <Text style={[TextStyle.lessonBody, { color: colors.primary, fontWeight: '600' }]}>Save</Text>
+                </TouchableOpacity>
+              </View>
+
+              <DateTimePicker
+                value={timePickerDate}
+                mode="time"
+                display="spinner"
+                onChange={(e, d) => d && setTimePickerDate(d)}
+                textColor={colors.textPrimary}
+              />
+            </View>
+          </View>
+        </Modal>
+      ) : (
+        showTimePicker && (
+          <DateTimePicker
+            value={timePickerDate}
+            mode="time"
+            is24Hour={false}
+            display="default"
+            onChange={(e, d) => {
+              setShowTimePicker(false);
+              if (d) {
+                const hours = d.getHours().toString().padStart(2, '0');
+                const minutes = d.getMinutes().toString().padStart(2, '0');
+                handleReminderSelect(`${hours}:${minutes}`);
+              }
+            }}
+          />
+        )
+      )}
+
       {/* Translation Bottom Sheet */}
       <Modal
         visible={isTranslationSheetVisible}
@@ -257,6 +345,7 @@ export default function SettingsScreen() {
             style={[styles.bottomSheet, { backgroundColor: colors.surface }]}
           >
             <View style={styles.sheetHeader}>
+              <View style={{ width: 24 }} />
               <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>
                 Bible Translation
               </Text>
@@ -265,60 +354,62 @@ export default function SettingsScreen() {
               </Pressable>
             </View>
 
-            <TouchableOpacity
-              style={[styles.sheetItem, { borderBottomColor: colors.border }]}
-              onPress={() => handleTranslationSelect("kjv")}
-            >
-              <Text style={[TextStyle.label, { color: colors.textPrimary }]}>
-                King James Version (KJV)
-              </Text>
-              {translation === "kjv" && (
-                <Check size={20} color={colors.primary} />
-              )}
-            </TouchableOpacity>
-
-            <TouchableOpacity
-              style={[styles.sheetItem, { borderBottomColor: colors.border }]}
-              activeOpacity={1}
-            >
-              <Text style={[TextStyle.label, { color: colors.textMuted }]}>
-                New International Version (NIV)
-              </Text>
-              <View
-                style={[
-                  styles.badge,
-                  { backgroundColor: colors.primary + "20" },
-                ]}
+            <View style={[styles.sheetOptionsContainer, { backgroundColor: colors.background }]}>
+              <TouchableOpacity
+                style={[styles.sheetItem, { borderBottomColor: colors.border }]}
+                onPress={() => handleTranslationSelect("kjv")}
               >
-                <Text
+                <Text style={[TextStyle.label, { color: colors.textPrimary }]}>
+                  King James Version (KJV)
+                </Text>
+                {translation === "kjv" && (
+                  <Check size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+
+              <TouchableOpacity
+                style={[styles.sheetItem, { borderBottomColor: colors.border }]}
+                activeOpacity={1}
+              >
+                <Text style={[TextStyle.label, { color: colors.textMuted }]}>
+                  New International Version (NIV)
+                </Text>
+                <View
                   style={[
-                    { color: colors.primary, fontSize: 10, fontWeight: "bold" },
+                    styles.badge,
+                    { backgroundColor: colors.primary + "20" },
                   ]}
                 >
-                  COMING SOON
-                </Text>
-              </View>
-            </TouchableOpacity>
+                  <Text
+                    style={[
+                      { color: colors.primary, fontSize: 10, fontWeight: "bold" },
+                    ]}
+                  >
+                    COMING SOON
+                  </Text>
+                </View>
+              </TouchableOpacity>
 
-            <TouchableOpacity style={styles.sheetItem} activeOpacity={1}>
-              <Text style={[TextStyle.label, { color: colors.textMuted }]}>
-                English Standard Version (ESV)
-              </Text>
-              <View
-                style={[
-                  styles.badge,
-                  { backgroundColor: colors.primary + "20" },
-                ]}
-              >
-                <Text
+              <TouchableOpacity style={[styles.sheetItem, { borderBottomWidth: 0 }]} activeOpacity={1}>
+                <Text style={[TextStyle.label, { color: colors.textMuted }]}>
+                  English Standard Version (ESV)
+                </Text>
+                <View
                   style={[
-                    { color: colors.primary, fontSize: 10, fontWeight: "bold" },
+                    styles.badge,
+                    { backgroundColor: colors.primary + "20" },
                   ]}
                 >
-                  COMING SOON
-                </Text>
-              </View>
-            </TouchableOpacity>
+                  <Text
+                    style={[
+                      { color: colors.primary, fontSize: 10, fontWeight: "bold" },
+                    ]}
+                  >
+                    COMING SOON
+                  </Text>
+                </View>
+              </TouchableOpacity>
+            </View>
           </View>
         </View>
       </Modal>
@@ -334,6 +425,7 @@ export default function SettingsScreen() {
             style={[styles.bottomSheet, { backgroundColor: colors.surface }]}
           >
             <View style={styles.sheetHeader}>
+              <View style={{ width: 24 }} />
               <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>
                 Daily Reminder
               </Text>
@@ -342,29 +434,53 @@ export default function SettingsScreen() {
               </Pressable>
             </View>
 
-            {["06:00", "07:00", "08:00", "09:00", "20:00", null].map(
-              (time, idx, arr) => (
-                <TouchableOpacity
-                  key={time || "off"}
-                  style={[
-                    styles.sheetItem,
-                    idx !== arr.length - 1 && {
-                      borderBottomColor: colors.border,
-                    },
-                  ]}
-                  onPress={() => handleReminderSelect(time)}
-                >
-                  <Text
-                    style={[TextStyle.label, { color: colors.textPrimary }]}
-                  >
-                    {time ? time : "Off"}
-                  </Text>
-                  {plan?.notificationTime === time && (
-                    <Check size={20} color={colors.primary} />
-                  )}
-                </TouchableOpacity>
-              ),
-            )}
+            <View style={[styles.sheetOptionsContainer, { backgroundColor: colors.background }]}>
+              {["06:00", "07:00", "08:00", "09:00", "20:00", "Custom...", null].map(
+                (timeOption, idx, arr) => {
+                  const isCustomSelected = plan?.notificationTime && !["06:00", "07:00", "08:00", "09:00", "20:00"].includes(plan.notificationTime);
+                  
+                  return (
+                    <TouchableOpacity
+                      key={timeOption || "off"}
+                      style={[
+                        styles.sheetItem,
+                        idx !== arr.length - 1 ? { borderBottomColor: colors.border } : { borderBottomWidth: 0 },
+                      ]}
+                      onPress={() => {
+                        if (timeOption === "Custom...") {
+                          if (plan?.notificationTime) {
+                            const parts = plan.notificationTime.split(':');
+                            if (parts.length === 2) {
+                              const d = new Date();
+                              d.setHours(parseInt(parts[0], 10), parseInt(parts[1], 10));
+                              setTimePickerDate(d);
+                            }
+                          }
+                          setShowTimePicker(true);
+                          setReminderSheetVisible(false);
+                        } else {
+                          handleReminderSelect(timeOption);
+                        }
+                      }}
+                    >
+                      <Text
+                        style={[TextStyle.label, { color: colors.textPrimary }]}
+                      >
+                        {timeOption === "Custom..." 
+                          ? (isCustomSelected ? `Custom (${formatTime12Hour(plan.notificationTime)})` : "Custom...")
+                          : timeOption ? formatTime12Hour(timeOption) : "Off"}
+                      </Text>
+                      {plan?.notificationTime === timeOption && timeOption !== "Custom..." && (
+                        <Check size={20} color={colors.primary} />
+                      )}
+                      {isCustomSelected && timeOption === "Custom..." && (
+                        <Check size={20} color={colors.primary} />
+                      )}
+                    </TouchableOpacity>
+                  );
+                }
+              )}
+            </View>
           </View>
         </View>
       </Modal>
@@ -378,6 +494,7 @@ export default function SettingsScreen() {
           />
           <View style={[styles.bottomSheet, { backgroundColor: colors.surface }]}>
             <View style={styles.sheetHeader}>
+              <View style={{ width: 24 }} />
               <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>
                 Reminder Mode
               </Text>
@@ -386,27 +503,29 @@ export default function SettingsScreen() {
               </Pressable>
             </View>
 
-            {[
-              { id: "notification", label: "Notification Only" },
-              { id: "both", label: "Notification + Alarm" },
-              { id: "alarm", label: "Alarm Only" },
-            ].map((option, idx, arr) => (
-              <TouchableOpacity
-                key={option.id}
-                style={[
-                  styles.sheetItem,
-                  idx !== arr.length - 1 && { borderBottomColor: colors.border },
-                ]}
-                onPress={() => handleReminderModeSelect(option.id as any)}
-              >
-                <Text style={[TextStyle.label, { color: colors.textPrimary }]}>
-                  {option.label}
-                </Text>
-                {reminderMode === option.id && (
-                  <Check size={20} color={colors.primary} />
-                )}
-              </TouchableOpacity>
-            ))}
+            <View style={[styles.sheetOptionsContainer, { backgroundColor: colors.background }]}>
+              {[
+                { id: "notification", label: "Notification Only" },
+                { id: "both", label: "Notification + Alarm" },
+                { id: "alarm", label: "Alarm Only" },
+              ].map((option, idx, arr) => (
+                <TouchableOpacity
+                  key={option.id}
+                  style={[
+                    styles.sheetItem,
+                    idx !== arr.length - 1 ? { borderBottomColor: colors.border } : { borderBottomWidth: 0 },
+                  ]}
+                  onPress={() => handleReminderModeSelect(option.id as any)}
+                >
+                  <Text style={[TextStyle.label, { color: colors.textPrimary }]}>
+                    {option.label}
+                  </Text>
+                  {reminderMode === option.id && (
+                    <Check size={20} color={colors.primary} />
+                  )}
+                </TouchableOpacity>
+              ))}
+            </View>
           </View>
         </View>
       </Modal>
@@ -462,6 +581,11 @@ const styles = StyleSheet.create({
     justifyContent: "space-between",
     alignItems: "center",
     marginBottom: 24,
+  },
+  sheetOptionsContainer: {
+    borderRadius: 16,
+    overflow: 'hidden',
+    paddingHorizontal: 16,
   },
   sheetItem: {
     flexDirection: "row",
