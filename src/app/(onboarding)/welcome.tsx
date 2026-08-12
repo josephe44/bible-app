@@ -4,7 +4,7 @@ import { useRouter } from 'expo-router';
 import { Image } from 'expo-image';
 import Animated, { useAnimatedScrollHandler, useSharedValue, useAnimatedStyle, interpolate, Extrapolation } from 'react-native-reanimated';
 import { useTheme } from '@/hooks/useTheme';
-import { Typography } from '@/constants/typography';
+import { TextStyle, FontFamily, FontSize } from '@/constants/typography';
 import { SafeAreaView } from 'react-native-safe-area-context';
 
 const { width, height } = Dimensions.get('window');
@@ -68,10 +68,10 @@ export default function WelcomeScreen() {
           <Image source={item.image} style={styles.image} contentFit="contain" />
         </View>
         <View style={styles.textContainer}>
-          <Text style={[Typography.presets.h1, { color: theme.textPrimary, textAlign: 'center', marginBottom: 16 }]}>
+          <Text style={[TextStyle.heading1, { color: theme.textPrimary, textAlign: 'center', marginBottom: 16 }]}>
             {item.title}
           </Text>
-          <Text style={[Typography.presets.bodyLarge, { color: theme.textSecondary, textAlign: 'center' }]}>
+          <Text style={[TextStyle.lessonBody, { color: theme.textSecondary, textAlign: 'center' }]}>
             {item.description}
           </Text>
         </View>
@@ -120,7 +120,7 @@ export default function WelcomeScreen() {
           onPress={handleNext}
           activeOpacity={0.8}
         >
-          <Text style={[Typography.presets.button, { color: theme.surface }]}>
+          <Text style={[{ fontFamily: FontFamily.semiBold, fontSize: FontSize.md }, { color: theme.surface }]}>
             {currentIndex === SLIDES.length - 1 ? 'Get Started' : 'Next'}
           </Text>
         </TouchableOpacity>

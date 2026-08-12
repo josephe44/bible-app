@@ -2,7 +2,7 @@ import React, { useState } from 'react';
 import { View, Text, StyleSheet, TouchableOpacity, ScrollView, Alert } from 'react-native';
 import { useRouter } from 'expo-router';
 import { useTheme } from '@/hooks/useTheme';
-import { Typography } from '@/constants/typography';
+import { TextStyle } from '@/constants/typography';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PLAN_DURATIONS, PLAN_THEMES, type PlanDurationPreset, type Theme } from '@/constants/themes';
 import { createPlan, insertPlanDays } from '@/db/queries';
@@ -60,10 +60,10 @@ export default function SetupScreen() {
 
   const renderDurationStep = () => (
     <View style={styles.stepContainer}>
-      <Text style={[Typography.presets.h2, { color: theme.textPrimary, marginBottom: 8 }]}>
+      <Text style={[TextStyle.heading2, { color: theme.textPrimary, marginBottom: 8 }]}>
         Choose your journey
       </Text>
-      <Text style={[Typography.presets.bodyLarge, { color: theme.textSecondary, marginBottom: 32 }]}>
+      <Text style={[TextStyle.lessonBody, { color: theme.textSecondary, marginBottom: 32 }]}>
         How long would you like this reading plan to last?
       </Text>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -76,8 +76,8 @@ export default function SetupScreen() {
               setCurrentStep('theme');
             }}
           >
-            <Text style={[Typography.presets.h3, { color: theme.textPrimary }]}>{d.label}</Text>
-            <Text style={[Typography.presets.bodyMedium, { color: theme.textSecondary }]}>{d.subtitle}</Text>
+            <Text style={[TextStyle.heading3, { color: theme.textPrimary }]}>{d.label}</Text>
+            <Text style={[TextStyle.label, { color: theme.textSecondary }]}>{d.subtitle}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -86,10 +86,10 @@ export default function SetupScreen() {
 
   const renderThemeStep = () => (
     <View style={styles.stepContainer}>
-      <Text style={[Typography.presets.h2, { color: theme.textPrimary, marginBottom: 8 }]}>
+      <Text style={[TextStyle.heading2, { color: theme.textPrimary, marginBottom: 8 }]}>
         Select a theme
       </Text>
-      <Text style={[Typography.presets.bodyLarge, { color: theme.textSecondary, marginBottom: 32 }]}>
+      <Text style={[TextStyle.lessonBody, { color: theme.textSecondary, marginBottom: 32 }]}>
         What would you like to focus on for the next {duration} days?
       </Text>
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -102,10 +102,10 @@ export default function SetupScreen() {
               setCurrentStep('notification');
             }}
           >
-            <Text style={[Typography.presets.h3, { color: theme.textPrimary }]}>
+            <Text style={[TextStyle.heading3, { color: theme.textPrimary }]}>
               {t.emoji} {t.label}
             </Text>
-            <Text style={[Typography.presets.bodyMedium, { color: theme.textSecondary }]}>{t.description}</Text>
+            <Text style={[TextStyle.label, { color: theme.textSecondary }]}>{t.description}</Text>
           </TouchableOpacity>
         ))}
       </ScrollView>
@@ -114,10 +114,10 @@ export default function SetupScreen() {
 
   const renderNotificationStep = () => (
     <View style={styles.stepContainer}>
-      <Text style={[Typography.presets.h2, { color: theme.textPrimary, marginBottom: 8 }]}>
+      <Text style={[TextStyle.heading2, { color: theme.textPrimary, marginBottom: 8 }]}>
         Daily Reminder
       </Text>
-      <Text style={[Typography.presets.bodyLarge, { color: theme.textSecondary, marginBottom: 32 }]}>
+      <Text style={[TextStyle.lessonBody, { color: theme.textSecondary, marginBottom: 32 }]}>
         When would you like to be reminded to read your daily verse?
       </Text>
       <ScrollView showsVerticalScrollIndicator={false} contentContainerStyle={styles.grid}>
@@ -127,7 +127,7 @@ export default function SetupScreen() {
             style={[styles.gridItem, { backgroundColor: theme.surface, borderColor: theme.border }]}
             onPress={() => handleFinish(time.value)}
           >
-            <Text style={[Typography.presets.bodyLarge, { color: theme.textPrimary, fontWeight: '600' }]}>
+            <Text style={[TextStyle.lessonBody, { color: theme.textPrimary, fontWeight: '600' }]}>
               {time.label}
             </Text>
           </TouchableOpacity>
@@ -144,7 +144,7 @@ export default function SetupScreen() {
             onPress={() => setCurrentStep(currentStep === 'notification' ? 'theme' : 'duration')}
             style={styles.backButton}
           >
-            <Text style={[Typography.presets.bodyMedium, { color: theme.primary }]}>← Back</Text>
+            <Text style={[TextStyle.label, { color: theme.primary }]}>← Back</Text>
           </TouchableOpacity>
         )}
         <View style={styles.progressContainer}>
