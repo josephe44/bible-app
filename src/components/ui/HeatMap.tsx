@@ -1,5 +1,5 @@
-import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, TouchableOpacity, Alert } from 'react-native';
+import React, { useMemo, useState } from 'react';
+import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { TextStyle } from '@/constants/typography';
 import { Flame } from 'lucide-react-native';
@@ -10,6 +10,7 @@ interface HeatMapProps {
 
 export function HeatMap({ readDates }: HeatMapProps) {
   const colors = useTheme();
+  const [selectedDay, setSelectedDay] = useState<{ date: string; status: string } | null>(null);
 
   // Convert readDates to a Set of YYYY-MM-DD for fast lookup
   const readSet = useMemo(() => {
@@ -24,81 +25,75 @@ export function HeatMap({ readDates }: HeatMapProps) {
     return set;
   }, [readDates]);
 
-  // Generate a grid of 52 columns x 7 rows
-  const weeks = useMemo(() => {
-    const numWeeks = 52;
-    const grid: { dateStr: string; formattedDate: string; isRead: boolean; isFuture: boolean }[][] = [];
-    
+  // Generate all days for the year 2026
+  const daysOf2026 = useMemo(() => {
+    const days: { dateStr: string; formattedDate: string; isRead: boolean; isFuture: boolean }[] = [];
+    const year = 2026;
+    const startDate = new Date(year, 0, 1); // Jan 1, 2026
+    const endDate = new Date(year, 11, 31); // Dec 31, 2026
     const now = new Date();
-    // Start from the most recent Saturday to align weeks properly (Sun-Sat)
-    const currentDayOfWeek = now.getDay();
-    const endDate = new Date(now);
-    endDate.setDate(now.getDate() + (6 - currentDayOfWeek));
-    
-    // Go back 52 weeks
-    const startDate = new Date(endDate);
-    startDate.setDate(endDate.getDate() - (numWeeks * 7 - 1));
 
     let currentDate = new Date(startDate);
     
-    for (let w = 0; w < numWeeks; w++) {
-      const week = [];
-      for (let d = 0; d < 7; d++) {
-        const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
-        
-        // e.g. "June 10, 2026"
-        const formattedDate = currentDate.toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' });
-        
-        const isRead = readSet.has(dateStr);
-        const isFuture = currentDate.getTime() > now.getTime();
-        week.push({ dateStr, formattedDate, isRead, isFuture });
-        
-        currentDate.setDate(currentDate.getDate() + 1);
-      }
-      grid.push(week);
+    while (currentDate <= endDate) {
+      const dateStr = `${currentDate.getFullYear()}-${String(currentDate.getMonth() + 1).padStart(2, '0')}-${String(currentDate.getDate()).padStart(2, '0')}`;
+      const formattedDate = currentDate.toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' });
+      const isRead = readSet.has(dateStr);
+      const isFuture = currentDate.getTime() > now.getTime();
+      
+      days.push({ dateStr, formattedDate, isRead, isFuture });
+      currentDate.setDate(currentDate.getDate() + 1);
     }
-    return grid;
+    return days;
   }, [readSet]);
 
   const handleCellPress = (day: any) => {
     if (day.isFuture) return;
     const status = day.isRead ? "Read 🔥" : "Not Read";
-    Alert.alert(day.formattedDate, `Status: ${status}`);
+    setSelectedDay({ date: day.formattedDate, status });
+    
+    // Auto hide after 3 seconds
+    setTimeout(() => {
+      setSelectedDay(null);
+    }, 3000);
   };
 
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
       <View style={styles.header}>
         <Flame size={20} color={colors.streak} style={{ marginRight: 8 }} />
-        <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>365-Day Reading Streak</Text>
+        <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>2026 Reading Streak</Text>
       </View>
       
-      <ScrollView horizontal showsHorizontalScrollIndicator={false} contentContainerStyle={styles.scrollContent}>
-        <View style={styles.grid}>
-          {weeks.map((week, wIdx) => (
-            <View key={`week-${wIdx}`} style={styles.column}>
-              {week.map((day, dIdx) => (
-                <TouchableOpacity 
-                  key={day.dateStr} 
-                  onPress={() => handleCellPress(day)}
-                  activeOpacity={0.7}
-                  disabled={day.isFuture}
-                  style={[
-                    styles.cell, 
-                    { 
-                      backgroundColor: day.isRead 
-                        ? colors.streak 
-                        : (colors.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)')
-                    },
-                    day.isFuture && { opacity: 0.2 },
-                    day.isRead && styles.activeCell
-                  ]} 
-                />
-              ))}
-            </View>
-          ))}
+      <View style={styles.grid}>
+        {daysOf2026.map((day) => (
+          <TouchableOpacity 
+            key={day.dateStr} 
+            onPress={() => handleCellPress(day)}
+            activeOpacity={0.7}
+            disabled={day.isFuture}
+            style={[
+              styles.cell, 
+              { 
+                backgroundColor: day.isRead 
+                  ? colors.streak 
+                  : (colors.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)')
+              },
+              day.isFuture && { opacity: 0.15 },
+              day.isRead && styles.activeCell
+            ]} 
+          />
+        ))}
+      </View>
+
+      {/* Inline Toast / Tooltip */}
+      {selectedDay && (
+        <View style={[styles.toast, { backgroundColor: colors.textPrimary }]}>
+          <Text style={[TextStyle.caption, { color: colors.background, fontWeight: '600' }]}>
+            {selectedDay.date}: {selectedDay.status}
+          </Text>
         </View>
-      </ScrollView>
+      )}
     </View>
   );
 }
@@ -107,22 +102,17 @@ const styles = StyleSheet.create({
   container: {
     borderRadius: 16,
     padding: 20,
-    marginTop: 16,
+    marginTop: 0,
+    position: 'relative',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 20,
-  },
-  scrollContent: {
-    paddingRight: 20, // Extra padding for scrolling
+    marginBottom: 16,
   },
   grid: {
     flexDirection: 'row',
-    gap: 4,
-  },
-  column: {
-    flexDirection: 'column',
+    flexWrap: 'wrap',
     gap: 4,
   },
   cell: {
@@ -136,5 +126,18 @@ const styles = StyleSheet.create({
     shadowOpacity: 0.5,
     shadowRadius: 4,
     elevation: 2,
+  },
+  toast: {
+    position: 'absolute',
+    bottom: 20,
+    alignSelf: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.2,
+    shadowRadius: 8,
+    elevation: 5,
   }
 });

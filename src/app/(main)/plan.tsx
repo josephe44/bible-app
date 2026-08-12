@@ -114,7 +114,7 @@ const styles = StyleSheet.create({
     marginTop: 8,
   },
   section: {
-    marginBottom: 24,
+    marginBottom: 8,
   },
   progressCard: {
     flexDirection: 'row',
