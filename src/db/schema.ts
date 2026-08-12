@@ -83,4 +83,10 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       );
     `,
   },
+  {
+    version: 2,
+    sql: `
+      ALTER TABLE journal ADD COLUMN versions TEXT DEFAULT '[]';
+    `,
+  },
 ];

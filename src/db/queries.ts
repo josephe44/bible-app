@@ -161,12 +161,25 @@ export async function upsertJournalEntry(
 ): Promise<void> {
   const db = await getDatabase();
   const now = new Date().toISOString();
-  await db.runAsync(
-    `INSERT INTO journal (plan_id, day_number, content, created_at, updated_at)
-     VALUES (?, ?, ?, ?, ?)
-     ON CONFLICT(plan_id, day_number) DO UPDATE SET content = excluded.content, updated_at = excluded.updated_at`,
-    [planId, dayNumber, content, now, now]
-  );
+  
+  const existing = await getJournalEntry(planId, dayNumber);
+  
+  if (existing) {
+    const versions = existing.versions || [];
+    versions.push({ content, timestamp: now });
+    const versionsJson = JSON.stringify(versions);
+    await db.runAsync(
+      'UPDATE journal SET content = ?, updated_at = ?, versions = ? WHERE plan_id = ? AND day_number = ?',
+      [content, now, versionsJson, planId, dayNumber]
+    );
+  } else {
+    const versions = [{ content, timestamp: now }];
+    const versionsJson = JSON.stringify(versions);
+    await db.runAsync(
+      'INSERT INTO journal (plan_id, day_number, content, created_at, updated_at, versions) VALUES (?, ?, ?, ?, ?, ?)',
+      [planId, dayNumber, content, now, now, versionsJson]
+    );
+  }
 }
 
 export async function getJournalEntries(planId: number): Promise<JournalEntry[]> {
@@ -177,15 +190,24 @@ export async function getJournalEntries(planId: number): Promise<JournalEntry[]>
     content: string;
     created_at: string;
     updated_at: string;
+    versions: string | null;
   }>('SELECT * FROM journal WHERE plan_id = ? ORDER BY day_number ASC', [planId]);
 
-  return rows.map((r) => ({
-    id: r.id,
-    dayNumber: r.day_number,
-    content: r.content,
-    createdAt: r.created_at,
-    updatedAt: r.updated_at,
-  }));
+  return rows.map((r) => {
+    let parsedVersions = [];
+    try {
+      if (r.versions) parsedVersions = JSON.parse(r.versions);
+    } catch(e) {}
+    
+    return {
+      id: r.id,
+      dayNumber: r.day_number,
+      content: r.content,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      versions: parsedVersions,
+    };
+  });
 }
 
 export async function getJournalEntry(
@@ -199,14 +221,22 @@ export async function getJournalEntry(
     content: string;
     created_at: string;
     updated_at: string;
+    versions: string | null;
   }>('SELECT * FROM journal WHERE plan_id = ? AND day_number = ?', [planId, dayNumber]);
 
   if (!row) return null;
+  
+  let parsedVersions = [];
+  try {
+    if (row.versions) parsedVersions = JSON.parse(row.versions);
+  } catch(e) {}
+
   return {
     id: row.id,
     dayNumber: row.day_number,
     content: row.content,
     createdAt: row.created_at,
     updatedAt: row.updated_at,
+    versions: parsedVersions,
   };
 }
