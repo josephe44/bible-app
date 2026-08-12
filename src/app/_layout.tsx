@@ -1,7 +1,7 @@
 import { DarkTheme, DefaultTheme, ThemeProvider } from 'expo-router/react-navigation';
 import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
-import { useEffect } from 'react';
+import { useEffect, useState } from 'react';
 import { useFonts } from 'expo-font';
 import {
   Lora_400Regular,
@@ -18,6 +18,9 @@ import {
 } from '@expo-google-fonts/inter';
 import { AppProvider } from '@/context/AppContext';
 import { useTheme } from '@/hooks/useTheme';
+import { CustomSplashScreen } from '@/components/ui/CustomSplashScreen';
+import { View } from 'react-native';
+
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
@@ -29,7 +32,6 @@ function RootLayoutNav() {
         <Stack.Screen name="index" />
         <Stack.Screen name="(onboarding)" options={{ animation: 'fade' }} />
         <Stack.Screen name="(main)" options={{ animation: 'fade' }} />
-
       </Stack>
     </ThemeProvider>
   );
@@ -48,8 +50,12 @@ export default function RootLayout() {
     Inter_700Bold,
   });
 
+  const [isSplashAnimationComplete, setIsSplashAnimationComplete] = useState(false);
+
   useEffect(() => {
     if (loaded || error) {
+      // Hide the native splash screen as quickly as possible 
+      // so our custom one can take over.
       SplashScreen.hideAsync();
     }
   }, [loaded, error]);
@@ -60,7 +66,14 @@ export default function RootLayout() {
 
   return (
     <AppProvider>
-      <RootLayoutNav />
+      <View style={{ flex: 1 }}>
+        <RootLayoutNav />
+        {!isSplashAnimationComplete && (
+          <CustomSplashScreen 
+            onAnimationComplete={() => setIsSplashAnimationComplete(true)} 
+          />
+        )}
+      </View>
     </AppProvider>
   );
 }
