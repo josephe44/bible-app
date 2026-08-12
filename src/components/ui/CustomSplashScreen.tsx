@@ -1,16 +1,18 @@
-import React, { useEffect, useRef } from 'react';
-import { View, Text, StyleSheet, Animated, Easing } from 'react-native';
-import { useTheme } from '@/hooks/useTheme';
-import { TextStyle } from '@/constants/typography';
-import { BookOpen } from 'lucide-react-native';
+import { TextStyle } from "@/constants/typography";
+import { useTheme } from "@/hooks/useTheme";
+import { BookOpen } from "lucide-react-native";
+import { useEffect, useRef } from "react";
+import { Animated, Easing, StyleSheet, Text, View } from "react-native";
 
 interface CustomSplashScreenProps {
   onAnimationComplete: () => void;
 }
 
-export function CustomSplashScreen({ onAnimationComplete }: CustomSplashScreenProps) {
+export function CustomSplashScreen({
+  onAnimationComplete,
+}: CustomSplashScreenProps) {
   const colors = useTheme();
-  
+
   // Animation values
   const fadeAnim = useRef(new Animated.Value(0)).current;
   const scaleAnim = useRef(new Animated.Value(0.9)).current;
@@ -37,7 +39,7 @@ export function CustomSplashScreen({ onAnimationComplete }: CustomSplashScreenPr
         duration: 800,
         useNativeDriver: true,
         easing: Easing.out(Easing.cubic),
-      })
+      }),
     ]).start(() => {
       // 2. Wait for a short duration, then fade out the whole screen
       setTimeout(() => {
@@ -55,34 +57,43 @@ export function CustomSplashScreen({ onAnimationComplete }: CustomSplashScreenPr
   }, []);
 
   return (
-    <Animated.View 
+    <Animated.View
       style={[
-        styles.container, 
-        { 
+        styles.container,
+        {
           backgroundColor: colors.background,
-          opacity: containerFadeAnim 
-        }
+          opacity: containerFadeAnim,
+        },
       ]}
     >
-      <Animated.View 
+      <Animated.View
         style={[
           styles.content,
           {
             opacity: fadeAnim,
-            transform: [
-              { scale: scaleAnim },
-              { translateY: textTranslateY }
-            ]
-          }
+            transform: [{ scale: scaleAnim }, { translateY: textTranslateY }],
+          },
         ]}
       >
-        <View style={[styles.iconContainer, { backgroundColor: colors.surface }]}>
+        <View
+          style={[styles.iconContainer, { backgroundColor: colors.surface }]}
+        >
           <BookOpen size={48} color={colors.primary} />
         </View>
-        <Text style={[TextStyle.heading1, { color: colors.textPrimary, marginTop: 24 }]}>
+        <Text
+          style={[
+            TextStyle.heading1,
+            { color: colors.textPrimary, marginTop: 24 },
+          ]}
+        >
           Antigravity Bible
         </Text>
-        <Text style={[TextStyle.lessonBody, { color: colors.textSecondary, marginTop: 8 }]}>
+        <Text
+          style={[
+            TextStyle.lessonBody,
+            { color: colors.textSecondary, marginTop: 8 },
+          ]}
+        >
           Your daily walk
         </Text>
       </Animated.View>
@@ -92,28 +103,28 @@ export function CustomSplashScreen({ onAnimationComplete }: CustomSplashScreenPr
 
 const styles = StyleSheet.create({
   container: {
-    position: 'absolute',
+    position: "absolute",
     top: 0,
     bottom: 0,
     left: 0,
     right: 0,
-    justifyContent: 'center',
-    alignItems: 'center',
+    justifyContent: "center",
+    alignItems: "center",
     zIndex: 9999,
   },
   content: {
-    alignItems: 'center',
+    alignItems: "center",
   },
   iconContainer: {
     width: 100,
     height: 100,
     borderRadius: 50,
-    justifyContent: 'center',
-    alignItems: 'center',
-    shadowColor: '#000',
+    justifyContent: "center",
+    alignItems: "center",
+    shadowColor: "#000",
     shadowOffset: { width: 0, height: 8 },
     shadowOpacity: 0.15,
     shadowRadius: 12,
     elevation: 10,
-  }
+  },
 });
