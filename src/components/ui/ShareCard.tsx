@@ -14,9 +14,9 @@ interface ShareCardProps {
 export const ShareCard = React.forwardRef<View, ShareCardProps>(
   ({ verseText, reference, themeString, day }, ref) => {
     const colors = useTheme();
-    // Using fixed dimensions to ensure consistent aspect ratio for sharing
-    const width = 1080 / 3;
-    const height = 1920 / 3;
+    // Using 4:3 aspect ratio for better cross-platform sharing
+    const width = 480;
+    const height = 360;
 
     return (
       <View
@@ -69,7 +69,7 @@ export const ShareCard = React.forwardRef<View, ShareCardProps>(
 
 const styles = StyleSheet.create({
   container: {
-    padding: 32,
+    padding: 24,
     justifyContent: 'space-between',
     // We want this off-screen or rendered virtually.
     // Ensure absolute positioning so it doesn't interrupt layout
