@@ -277,3 +277,127 @@ export async function getJournalEntry(
     versions: parsedVersions,
   };
 }
+
+// ─────────────────────────────────────────
+// Notes & Unified Feed
+// ─────────────────────────────────────────
+
+export async function upsertNote(
+  noteId: number | null,
+  content: string
+): Promise<void> {
+  const db = await getDatabase();
+  const now = new Date().toISOString();
+  
+  if (noteId) {
+    const existing = await db.getFirstAsync<{ versions: string | null }>(
+      'SELECT versions FROM notes WHERE id = ?', [noteId]
+    );
+    if (existing) {
+      let versions = [];
+      try {
+        if (existing.versions) versions = JSON.parse(existing.versions);
+      } catch(e) {}
+      
+      versions.push({ content, timestamp: now });
+      const versionsJson = JSON.stringify(versions);
+      await db.runAsync(
+        'UPDATE notes SET content = ?, updated_at = ?, versions = ? WHERE id = ?',
+        [content, now, versionsJson, noteId]
+      );
+      return;
+    }
+  }
+  
+  const versions = [{ content, timestamp: now }];
+  const versionsJson = JSON.stringify(versions);
+  await db.runAsync(
+    'INSERT INTO notes (content, created_at, updated_at, versions) VALUES (?, ?, ?, ?)',
+    [content, now, now, versionsJson]
+  );
+}
+
+export async function getNote(id: number): Promise<FeedItem | null> {
+  const db = await getDatabase();
+  const r = await db.getFirstAsync<{
+    id: number;
+    content: string;
+    created_at: string;
+    updated_at: string;
+    versions: string | null;
+  }>('SELECT * FROM notes WHERE id = ?', [id]);
+  
+  if (!r) return null;
+  
+  let parsedVersions = [];
+  try { if (r.versions) parsedVersions = JSON.parse(r.versions); } catch(e) {}
+  
+  return {
+    type: 'note',
+    id: r.id,
+    content: r.content,
+    createdAt: r.created_at,
+    updatedAt: r.updated_at,
+    versions: parsedVersions,
+  };
+}
+
+import type { FeedItem } from '@/types';
+
+export async function getUnifiedJournalFeed(planId: number | null): Promise<FeedItem[]> {
+  const db = await getDatabase();
+  const items: FeedItem[] = [];
+
+  // Fetch journal entries if plan exists
+  if (planId) {
+    const journalRows = await db.getAllAsync<{
+      id: number;
+      day_number: number;
+      content: string;
+      created_at: string;
+      updated_at: string;
+      versions: string | null;
+    }>('SELECT * FROM journal WHERE plan_id = ?', [planId]);
+
+    journalRows.forEach(r => {
+      let parsedVersions = [];
+      try { if (r.versions) parsedVersions = JSON.parse(r.versions); } catch(e) {}
+      items.push({
+        type: 'journal',
+        id: r.id,
+        dayNumber: r.day_number,
+        content: r.content,
+        createdAt: r.created_at,
+        updatedAt: r.updated_at,
+        versions: parsedVersions,
+      });
+    });
+  }
+
+  // Fetch standalone notes
+  const noteRows = await db.getAllAsync<{
+    id: number;
+    content: string;
+    created_at: string;
+    updated_at: string;
+    versions: string | null;
+  }>('SELECT * FROM notes');
+
+  noteRows.forEach(r => {
+    let parsedVersions = [];
+    try { if (r.versions) parsedVersions = JSON.parse(r.versions); } catch(e) {}
+    items.push({
+      type: 'note',
+      id: r.id,
+      content: r.content,
+      createdAt: r.created_at,
+      updatedAt: r.updated_at,
+      versions: parsedVersions,
+    });
+  });
+
+  // Sort by createdAt descending (newest first)
+  items.sort((a, b) => new Date(b.createdAt).getTime() - new Date(a.createdAt).getTime());
+
+  return items;
+}

@@ -3,10 +3,10 @@ import { View, Text, StyleSheet, TouchableOpacity } from 'react-native';
 import { useTheme } from '@/hooks/useTheme';
 import { TextStyle } from '@/constants/typography';
 import { BookOpen } from 'lucide-react-native';
-import type { JournalEntry as JournalEntryType } from '@/types';
+import type { FeedItem } from '@/types';
 
 interface JournalEntryProps {
-  entry: JournalEntryType;
+  entry: FeedItem;
   onPress: () => void;
 }
 
@@ -23,7 +23,7 @@ export function JournalEntry({ entry, onPress }: JournalEntryProps) {
         <View style={styles.dayBadge}>
           <BookOpen size={16} color={colors.primary} />
           <Text style={[{ color: colors.primary, marginLeft: 6 }, TextStyle.label]}>
-            Day {entry.dayNumber}
+            {entry.type === 'journal' ? `Day ${entry.dayNumber}` : 'Note'}
           </Text>
         </View>
         <Text style={[{ color: colors.textSecondary }, TextStyle.caption]}>

@@ -89,4 +89,16 @@ const MIGRATIONS: { version: number; sql: string }[] = [
       ALTER TABLE journal ADD COLUMN versions TEXT DEFAULT '[]';
     `,
   },
+  {
+    version: 3,
+    sql: `
+      CREATE TABLE IF NOT EXISTS notes (
+        id INTEGER PRIMARY KEY AUTOINCREMENT,
+        content TEXT NOT NULL,
+        versions TEXT DEFAULT '[]',
+        created_at TEXT NOT NULL,
+        updated_at TEXT NOT NULL
+      );
+    `,
+  },
 ];

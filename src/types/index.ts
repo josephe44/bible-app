@@ -72,3 +72,15 @@ export interface PlanSetupState {
   notificationTime: string | null;
   notificationsEnabled: boolean;
 }
+
+export interface NoteEntry {
+  id: number;
+  content: string;
+  createdAt: string;
+  updatedAt: string;
+  versions?: { content: string; timestamp: string }[];
+}
+
+export type FeedItem = 
+  | (JournalEntry & { type: 'journal' })
+  | (NoteEntry & { type: 'note' });
