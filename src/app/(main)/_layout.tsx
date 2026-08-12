@@ -7,6 +7,7 @@ export default function MainLayout() {
   return (
     <NativeTabs
       backgroundColor={colors.background}
+      indicatorColor={colors.primaryMuted}
       iconColor={{
         default: colors.textSecondary,
         selected: colors.primary,
