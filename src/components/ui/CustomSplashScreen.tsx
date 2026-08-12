@@ -86,7 +86,7 @@ export function CustomSplashScreen({
             { color: colors.textPrimary, marginTop: 24 },
           ]}
         >
-          Antigravity Bible
+          Eword Bible
         </Text>
         <Text
           style={[

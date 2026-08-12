@@ -1,5 +1,6 @@
 import { CustomSplashScreen } from "@/components/ui/CustomSplashScreen";
 import { AppProvider } from "@/context/AppContext";
+import { NotificationManager } from "@/components/NotificationManager";
 import { useTheme } from "@/hooks/useTheme";
 import {
   Inter_400Regular,
@@ -71,6 +72,7 @@ export default function RootLayout() {
 
   return (
     <AppProvider>
+      <NotificationManager />
       <View style={{ flex: 1 }}>
         <RootLayoutNav />
         {!isSplashAnimationComplete && (
@@ -82,3 +84,4 @@ export default function RootLayout() {
     </AppProvider>
   );
 }
+

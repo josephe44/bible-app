@@ -1,25 +1,23 @@
-/**
- * Eword — useNotifications Hook
- * Schedules, cancels, and reschedules daily Bible verse reminders
- * using expo-notifications.
- */
-
 import { useEffect, useCallback } from 'react';
 import * as Notifications from 'expo-notifications';
 import { Platform } from 'react-native';
+import { storage } from '@/utils/storage';
 
 // ─────────────────────────────────────────
 // Notification Handler (configure at app level)
 // ─────────────────────────────────────────
 
 Notifications.setNotificationHandler({
-  handleNotification: async () => ({
-    shouldShowAlert: true,
-    shouldPlaySound: true,
-    shouldSetBadge: false,
-    shouldShowBanner: true,
-    shouldShowList: true,
-  }),
+  handleNotification: async () => {
+    const mode = storage.getString("reminderMode") || "notification";
+    return {
+      shouldShowAlert: mode !== "alarm", // If purely alarm, we might still need to show alert for the OS to play sound on some versions, but let's keep it visible. Actually iOS requires a banner for sounds.
+      shouldPlaySound: true,
+      shouldSetBadge: false,
+      shouldShowBanner: true,
+      shouldShowList: true,
+    };
+  },
 });
 
 // ─────────────────────────────────────────
@@ -54,18 +52,34 @@ export async function scheduleDailyNotification(timeString: string): Promise<voi
   const hour = parseInt(hourStr, 10);
   const minute = parseInt(minuteStr, 10);
 
+  const mode = storage.getString("reminderMode") || "notification";
+  const useAlarmSound = mode === "alarm" || mode === "both";
+
+  if (Platform.OS === 'android') {
+    await Notifications.setNotificationChannelAsync(
+      useAlarmSound ? 'eword-alarm' : 'eword-default',
+      {
+        name: useAlarmSound ? 'Daily Reminder (Alarm)' : 'Daily Reminder',
+        importance: Notifications.AndroidImportance.HIGH,
+        sound: useAlarmSound ? 'alarm.wav' : 'default', // Custom sound for alarm
+        vibrationPattern: useAlarmSound ? [0, 500, 500, 500] : [0, 250, 250, 250],
+      }
+    );
+  }
+
   await Notifications.scheduleNotificationAsync({
     identifier: NOTIFICATION_IDENTIFIER,
     content: {
       title: '📖 Your Daily Word is Ready',
       body: "Open today's verse and let God's word guide your day.",
-      sound: true,
+      sound: useAlarmSound ? 'alarm.wav' : 'default', // Use custom sound file
       data: { screen: 'home' },
     },
     trigger: {
       type: Notifications.SchedulableTriggerInputTypes.DAILY,
       hour,
       minute,
+      channelId: Platform.OS === 'android' ? (useAlarmSound ? 'eword-alarm' : 'eword-default') : undefined,
     },
   });
 }
@@ -87,6 +101,9 @@ interface UseNotificationsOptions {
 }
 
 export function useNotifications({ notificationTime, enabled }: UseNotificationsOptions): void {
+  // We re-run setup when notificationTime changes or reminderMode changes.
+  const mode = storage.getString("reminderMode") || "notification";
+  
   const setupNotifications = useCallback(async () => {
     if (!enabled || !notificationTime) {
       await cancelDailyNotification();
@@ -100,7 +117,7 @@ export function useNotifications({ notificationTime, enabled }: UseNotifications
     }
 
     await scheduleDailyNotification(notificationTime);
-  }, [enabled, notificationTime]);
+  }, [enabled, notificationTime, mode]);
 
   useEffect(() => {
     setupNotifications();

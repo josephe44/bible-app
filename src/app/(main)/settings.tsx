@@ -31,6 +31,7 @@ import {
   View,
 } from "react-native";
 import { SafeAreaView } from "react-native-safe-area-context";
+import { storage } from "@/utils/storage";
 
 export default function SettingsScreen() {
   const colors = useTheme();
@@ -76,6 +77,19 @@ export default function SettingsScreen() {
         },
       ],
     );
+  };
+
+  // Read synchronously from MMKV on mount
+  const initialMode = storage.getString("reminderMode") || "notification";
+  const [reminderMode, setReminderMode] = useState<"notification" | "alarm" | "both">(
+    initialMode as any
+  );
+  const [isReminderModeSheetVisible, setReminderModeSheetVisible] = useState(false);
+
+  const handleReminderModeSelect = (mode: "notification" | "alarm" | "both") => {
+    storage.set("reminderMode", mode);
+    setReminderMode(mode);
+    setReminderModeSheetVisible(false);
   };
 
   const toggleDarkMode = () => {
@@ -189,6 +203,20 @@ export default function SettingsScreen() {
               value={plan?.notificationTime || "Off"}
               onPress={() => setReminderSheetVisible(true)}
             />
+            {plan?.notificationTime && (
+              <OptionRow
+                icon={Bell}
+                title="Reminder Mode"
+                value={
+                  reminderMode === "notification"
+                    ? "Notification"
+                    : reminderMode === "alarm"
+                    ? "Alarm"
+                    : "Both"
+                }
+                onPress={() => setReminderModeSheetVisible(true)}
+              />
+            )}
             <OptionRow icon={Moon} title="Dark Mode" isSwitch />
           </View>
         </View>
@@ -337,6 +365,48 @@ export default function SettingsScreen() {
                 </TouchableOpacity>
               ),
             )}
+          </View>
+        </View>
+      </Modal>
+
+      {/* Reminder Mode Bottom Sheet */}
+      <Modal visible={isReminderModeSheetVisible} transparent animationType="slide">
+        <View style={styles.modalOverlay}>
+          <Pressable
+            style={styles.modalBackdrop}
+            onPress={() => setReminderModeSheetVisible(false)}
+          />
+          <View style={[styles.bottomSheet, { backgroundColor: colors.surface }]}>
+            <View style={styles.sheetHeader}>
+              <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>
+                Reminder Mode
+              </Text>
+              <Pressable onPress={() => setReminderModeSheetVisible(false)}>
+                <X size={24} color={colors.textSecondary} />
+              </Pressable>
+            </View>
+
+            {[
+              { id: "notification", label: "Notification Only" },
+              { id: "both", label: "Notification + Alarm" },
+              { id: "alarm", label: "Alarm Only" },
+            ].map((option, idx, arr) => (
+              <TouchableOpacity
+                key={option.id}
+                style={[
+                  styles.sheetItem,
+                  idx !== arr.length - 1 && { borderBottomColor: colors.border },
+                ]}
+                onPress={() => handleReminderModeSelect(option.id as any)}
+              >
+                <Text style={[TextStyle.label, { color: colors.textPrimary }]}>
+                  {option.label}
+                </Text>
+                {reminderMode === option.id && (
+                  <Check size={20} color={colors.primary} />
+                )}
+              </TouchableOpacity>
+            ))}
           </View>
         </View>
       </Modal>

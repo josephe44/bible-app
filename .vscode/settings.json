@@ -4,5 +4,5 @@
     "source.organizeImports": "explicit",
     "source.sortMembers": "explicit"
   },
-  "cSpell.words": ["AUTOINCREMENT", "eword", "Pressable"]
+  "cSpell.words": ["AUTOINCREMENT", "eword", "mmkv", "Pressable"]
 }

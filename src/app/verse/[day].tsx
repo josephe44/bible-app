@@ -66,11 +66,49 @@ export default function VerseDeepDiveScreen() {
     );
   }
 
+  const [preferredVoice, setPreferredVoice] = useState<string>();
+
+  useEffect(() => {
+    // Find a premium, calm, and smooth voice
+    Speech.getAvailableVoicesAsync().then((voices) => {
+      // Filter to English voices
+      const enVoices = voices.filter(v => v.language.startsWith('en'));
+      
+      // Preferred voices order (iOS premium voices, then Android network voices)
+      const preferredNames = [
+        'Samantha (Enhanced)', // iOS
+        'Samantha',            // iOS
+        'Alex',                // iOS
+        'en-us-x-sfg-network', // Android
+        'en-us-x-tpd-network', // Android
+        'en-gb-x-rjs-network', // Android UK
+      ];
+
+      for (const name of preferredNames) {
+        const found = enVoices.find(v => v.name === name || v.identifier.includes(name));
+        if (found) {
+          setPreferredVoice(found.identifier);
+          return;
+        }
+      }
+
+      // Fallback to any enhanced/premium voice
+      const enhanced = enVoices.find(v => v.quality === Speech.VoiceQuality.Enhanced);
+      if (enhanced) {
+        setPreferredVoice(enhanced.identifier);
+      } else if (enVoices.length > 0) {
+        setPreferredVoice(enVoices[0].identifier);
+      }
+    });
+  }, []);
+
   const speak = () => {
     const textToSpeak = verseEntry.text;
     Speech.speak(textToSpeak, {
       language: "en-US",
       rate: 0.85,
+      pitch: 0.95, // Slightly lower pitch for a calmer voice
+      ...(preferredVoice ? { voice: preferredVoice } : {}),
     });
   };
 
