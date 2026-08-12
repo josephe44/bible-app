@@ -9,7 +9,8 @@ import { DayCalendarStrip } from '@/components/ui/DayCalendarStrip';
 import { HeatMap } from '@/components/ui/HeatMap';
 import { useRouter } from 'expo-router';
 import { getAllReadDates } from '@/db/queries';
-import { X, ChevronLeft, ChevronRight, BarChart2 } from 'lucide-react-native';
+import { X, ChevronLeft, ChevronRight, ChevronDown, BarChart2 } from 'lucide-react-native';
+import { LayoutAnimation } from 'react-native';
 
 export default function PlanScreen() {
   const colors = useTheme();
@@ -20,6 +21,7 @@ export default function PlanScreen() {
   
   // History Modal State
   const [historyYear, setHistoryYear] = useState(new Date().getFullYear());
+  const [showAllMonths, setShowAllMonths] = useState(false);
 
   useEffect(() => {
     // Fetch all historical read dates from the DB
@@ -42,27 +44,19 @@ export default function PlanScreen() {
   const currentYear = new Date().getFullYear();
   const currentMonth = new Date().getMonth();
 
-  // For the expanded history view
-  // 2026 is the launch year (August = month 7)
   const historyMonths = useMemo(() => {
-    const months = [];
-    let startMonth = 0;
-    let endMonth = 11;
-    
-    if (historyYear === 2026) {
-      startMonth = 7; // August
-    }
-    
-    // Don't show future months beyond the current year/month
-    if (historyYear === currentYear) {
-      endMonth = currentMonth;
-    }
+    // Show all 12 months from January to December (0 to 11)
+    return [0, 1, 2, 3, 4, 5, 6, 7, 8, 9, 10, 11];
+  }, []);
 
-    for (let m = startMonth; m <= endMonth; m++) {
-      months.push(m);
-    }
-    return months.reverse(); // Show most recent month first
-  }, [historyYear, currentYear, currentMonth]);
+  const toggleMonths = () => {
+    LayoutAnimation.configureNext(LayoutAnimation.Presets.easeInEaseOut);
+    setShowAllMonths(!showAllMonths);
+  };
+
+  const displayedMonths = (historyYear === currentYear && !showAllMonths) 
+    ? [currentMonth] 
+    : historyMonths;
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
@@ -95,7 +89,11 @@ export default function PlanScreen() {
                 readDates={historicalReadDates} 
                 year={currentYear} 
                 month={currentMonth}
-                onExpand={() => setIsHistoryModalVisible(true)}
+                onExpand={() => {
+                  setHistoryYear(currentYear);
+                  setShowAllMonths(false);
+                  setIsHistoryModalVisible(true);
+                }}
               />
             </View>
 
@@ -126,36 +124,65 @@ export default function PlanScreen() {
           </View>
 
           <View style={styles.yearSelector}>
-            <TouchableOpacity 
-              onPress={() => setHistoryYear(y => Math.max(2026, y - 1))}
-              disabled={historyYear <= 2026}
-              style={{ opacity: historyYear <= 2026 ? 0.3 : 1, padding: 8 }}
-            >
-              <ChevronLeft size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
+            {historyYear > 2026 ? (
+              <TouchableOpacity 
+                onPress={() => {
+                  setHistoryYear(y => Math.max(2026, y - 1));
+                  setShowAllMonths(true); // Auto expand all months for past years
+                }}
+                style={{ padding: 8 }}
+              >
+                <ChevronLeft size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            ) : (
+              <View style={{ width: 40 }} />
+            )}
+            
             <Text style={[TextStyle.heading2, { color: colors.textPrimary, minWidth: 80, textAlign: 'center' }]}>
               {historyYear}
             </Text>
-            <TouchableOpacity 
-              onPress={() => setHistoryYear(y => Math.min(currentYear, y + 1))}
-              disabled={historyYear >= currentYear}
-              style={{ opacity: historyYear >= currentYear ? 0.3 : 1, padding: 8 }}
-            >
-              <ChevronRight size={24} color={colors.textPrimary} />
-            </TouchableOpacity>
+            
+            {historyYear < currentYear ? (
+              <TouchableOpacity 
+                onPress={() => {
+                  const newYear = Math.min(currentYear, historyYear + 1);
+                  setHistoryYear(newYear);
+                  if (newYear === currentYear) setShowAllMonths(false);
+                }}
+                style={{ padding: 8 }}
+              >
+                <ChevronRight size={24} color={colors.textPrimary} />
+              </TouchableOpacity>
+            ) : (
+              <View style={{ width: 40 }} />
+            )}
           </View>
 
+          {historyYear === currentYear && (
+            <View style={{ alignItems: 'center', marginBottom: 16 }}>
+              <TouchableOpacity 
+                style={[styles.badgeToggle, { backgroundColor: colors.surface }]}
+                onPress={toggleMonths}
+                activeOpacity={0.7}
+              >
+                <Text style={[TextStyle.caption, { color: colors.textPrimary, marginRight: 6, fontWeight: '600' }]}>
+                  {showAllMonths ? 'See less' : 'See all months'}
+                </Text>
+                {showAllMonths ? (
+                  <ChevronDown size={14} color={colors.textPrimary} />
+                ) : (
+                  <ChevronRight size={14} color={colors.textPrimary} />
+                )}
+              </TouchableOpacity>
+            </View>
+          )}
+
           <ScrollView contentContainerStyle={styles.modalScrollContent} showsVerticalScrollIndicator={false}>
-            {historyMonths.map((m) => (
+            {displayedMonths.map((m) => (
               <View key={m} style={styles.monthWrapper}>
                 <HeatMap readDates={historicalReadDates} year={historyYear} month={m} />
               </View>
             ))}
-            {historyMonths.length === 0 && (
-              <Text style={[TextStyle.lessonBody, { color: colors.textSecondary, textAlign: 'center', marginTop: 40 }]}>
-                No data available for this year.
-              </Text>
-            )}
           </ScrollView>
         </View>
       </Modal>
@@ -205,5 +232,14 @@ const styles = StyleSheet.create({
   },
   monthWrapper: {
     marginBottom: 24,
+  },
+  badgeToggle: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    paddingHorizontal: 16,
+    paddingVertical: 10,
+    borderRadius: 20,
+    alignSelf: 'center',
   }
 });

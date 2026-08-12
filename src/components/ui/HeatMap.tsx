@@ -93,7 +93,6 @@ export function HeatMap({ readDates, year, month, showHeader = true, onExpand }:
                   ? colors.streak 
                   : (colors.isDark ? 'rgba(255,255,255,0.05)' : 'rgba(0,0,0,0.05)')
               },
-              day.isFuture && { opacity: 0.15 },
               day.isRead && styles.activeCell
             ]} 
           />
