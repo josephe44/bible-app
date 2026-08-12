@@ -39,7 +39,9 @@
         {
           "icon": "./assets/images/icon.png",
           "color": "#C8862A",
-          "sounds": []
+          "sounds": [
+            "./assets/sounds/alarm.wav"
+          ]
         }
       ],
       "expo-sqlite",
