@@ -64,6 +64,11 @@ export async function getActivePlan(): Promise<Plan | null> {
   };
 }
 
+export async function deleteActivePlan(): Promise<void> {
+  const db = await getDatabase();
+  await db.runAsync('DELETE FROM plan WHERE is_active = 1');
+}
+
 export async function updatePlanNotificationTime(
   planId: number,
   time: string | null

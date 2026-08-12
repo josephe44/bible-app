@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useRef } from 'react';
 import { View, Text, StyleSheet, ScrollView, Pressable } from 'react-native';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { useApp } from '@/context/AppContext';
@@ -6,13 +6,16 @@ import { useTheme } from '@/hooks/useTheme';
 import { TextStyle } from '@/constants/typography';
 import versesData from '@/content/verses.json';
 import * as Speech from 'expo-speech';
-import { X, Volume2 } from 'lucide-react-native';
+import { X, Volume2, Share } from 'lucide-react-native';
+import { ShareCard } from '@/components/ui/ShareCard';
+import { shareVerseCard } from '@/services/shareService';
 
 export default function VerseDeepDiveScreen() {
   const { day } = useLocalSearchParams();
   const { state } = useApp();
   const theme = useTheme();
   const router = useRouter();
+  const shareCardRef = useRef<View>(null);
 
   const dayNumber = parseInt(day as string, 10);
   const planDay = state.plan?.days.find((d) => d.dayNumber === dayNumber);
@@ -36,6 +39,10 @@ export default function VerseDeepDiveScreen() {
     });
   };
 
+  const handleShare = () => {
+    shareVerseCard(shareCardRef);
+  };
+
   return (
     <View style={[styles.container, { backgroundColor: theme.background }]}>
       <View style={[styles.header, { borderBottomColor: theme.surface }]}>
@@ -43,10 +50,23 @@ export default function VerseDeepDiveScreen() {
           <X size={20} color={theme.textPrimary} />
         </Pressable>
         <Text style={[TextStyle.heading3, { color: theme.textPrimary }]}>{(verseEntry as any).reference}</Text>
-        <Pressable onPress={speak} style={styles.actionButton}>
-          <Volume2 size={20} color={theme.primary} />
-        </Pressable>
+        <View style={{ flexDirection: 'row' }}>
+          <Pressable onPress={handleShare} style={styles.actionButton}>
+            <Share size={20} color={theme.textPrimary} />
+          </Pressable>
+          <Pressable onPress={speak} style={styles.actionButton}>
+            <Volume2 size={20} color={theme.primary} />
+          </Pressable>
+        </View>
       </View>
+
+      <ShareCard 
+        ref={shareCardRef}
+        verseText={verseEntry.text}
+        reference={(verseEntry as any).reference}
+        themeString={state.plan?.theme || 'faith'}
+        day={dayNumber}
+      />
 
       <ScrollView contentContainerStyle={styles.scrollContent}>
         {verseEntry.context_before ? (

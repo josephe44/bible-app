@@ -5,11 +5,13 @@ import { usePlan, useApp } from '@/context/AppContext';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { TextStyle } from '@/constants/typography';
 import { Bell, Globe, Moon, Trash2, ChevronRight } from 'lucide-react-native';
-import { updatePlanTranslation } from '@/db/queries';
+import { updatePlanTranslation, deleteActivePlan } from '@/db/queries';
+import { useRouter } from 'expo-router';
 
 export default function SettingsScreen() {
   const colors = useTheme();
   const plan = usePlan();
+  const router = useRouter();
   const { refreshPlan } = useApp();
   const [translation, setTranslation] = useState(plan?.translation || 'niv');
 
@@ -30,9 +32,10 @@ export default function SettingsScreen() {
         { 
           text: "Reset", 
           style: "destructive",
-          onPress: () => {
-            // Placeholder: we would call a reset DB query here and navigate to onboarding
-            Alert.alert("Plan Reset", "Your plan has been reset.");
+          onPress: async () => {
+            await deleteActivePlan();
+            await refreshPlan();
+            router.replace('/');
           }
         }
       ]
