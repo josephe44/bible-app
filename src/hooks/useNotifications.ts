@@ -61,7 +61,7 @@ export async function scheduleDailyNotification(timeString: string): Promise<voi
       {
         name: useAlarmSound ? 'Daily Reminder (Alarm)' : 'Daily Reminder',
         importance: Notifications.AndroidImportance.HIGH,
-        sound: useAlarmSound ? 'alarm.wav' : 'default', // Custom sound for alarm
+        sound: useAlarmSound ? 'alarm.wav' : undefined, // Custom sound for alarm, undefined for default
         vibrationPattern: useAlarmSound ? [0, 500, 500, 500] : [0, 250, 250, 250],
       }
     );
@@ -72,7 +72,7 @@ export async function scheduleDailyNotification(timeString: string): Promise<voi
     content: {
       title: '📖 Your Daily Word is Ready',
       body: "Open today's verse and let God's word guide your day.",
-      sound: useAlarmSound ? 'alarm.wav' : 'default', // Use custom sound file
+      sound: useAlarmSound ? 'alarm.wav' : true, // Use custom sound file or true for default
       data: { screen: 'home' },
     },
     trigger: {
