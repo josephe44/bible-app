@@ -6,9 +6,12 @@ import { Flame } from 'lucide-react-native';
 
 interface HeatMapProps {
   readDates: string[]; // Array of ISO date strings
+  year: number;
+  month: number; // 0-11
+  showHeader?: boolean;
 }
 
-export function HeatMap({ readDates }: HeatMapProps) {
+export function HeatMap({ readDates, year, month, showHeader = true }: HeatMapProps) {
   const colors = useTheme();
   const [selectedDay, setSelectedDay] = useState<{ date: string; status: string } | null>(null);
 
@@ -25,12 +28,11 @@ export function HeatMap({ readDates }: HeatMapProps) {
     return set;
   }, [readDates]);
 
-  // Generate all days for the year 2026
-  const daysOf2026 = useMemo(() => {
-    const days: { dateStr: string; formattedDate: string; isRead: boolean; isFuture: boolean }[] = [];
-    const year = 2026;
-    const startDate = new Date(year, 0, 1); // Jan 1, 2026
-    const endDate = new Date(year, 11, 31); // Dec 31, 2026
+  // Generate all days for the specified month and year
+  const daysOfMonth = useMemo(() => {
+    const days: { dateStr: string; formattedDate: string; isRead: boolean; isFuture: boolean; dayNumber: number }[] = [];
+    const startDate = new Date(year, month, 1);
+    const endDate = new Date(year, month + 1, 0); // Last day of month
     const now = new Date();
 
     let currentDate = new Date(startDate);
@@ -41,11 +43,11 @@ export function HeatMap({ readDates }: HeatMapProps) {
       const isRead = readSet.has(dateStr);
       const isFuture = currentDate.getTime() > now.getTime();
       
-      days.push({ dateStr, formattedDate, isRead, isFuture });
+      days.push({ dateStr, formattedDate, isRead, isFuture, dayNumber: currentDate.getDate() });
       currentDate.setDate(currentDate.getDate() + 1);
     }
     return days;
-  }, [readSet]);
+  }, [readSet, year, month]);
 
   const handleCellPress = (day: any) => {
     if (day.isFuture) return;
@@ -58,15 +60,19 @@ export function HeatMap({ readDates }: HeatMapProps) {
     }, 3000);
   };
 
+  const monthName = new Date(year, month, 1).toLocaleString('en-US', { month: 'long' });
+
   return (
     <View style={[styles.container, { backgroundColor: colors.surface }]}>
-      <View style={styles.header}>
-        <Flame size={20} color={colors.streak} style={{ marginRight: 8 }} />
-        <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>2026 Reading Streak</Text>
-      </View>
+      {showHeader && (
+        <View style={styles.header}>
+          <Flame size={18} color={colors.streak} style={{ marginRight: 8 }} />
+          <Text style={[TextStyle.heading3, { color: colors.textPrimary }]}>{monthName} Streak</Text>
+        </View>
+      )}
       
       <View style={styles.grid}>
-        {daysOf2026.map((day) => (
+        {daysOfMonth.map((day) => (
           <TouchableOpacity 
             key={day.dateStr} 
             onPress={() => handleCellPress(day)}
@@ -108,7 +114,7 @@ const styles = StyleSheet.create({
   header: {
     flexDirection: 'row',
     alignItems: 'center',
-    marginBottom: 16,
+    marginBottom: 12,
   },
   grid: {
     flexDirection: 'row',
@@ -116,9 +122,9 @@ const styles = StyleSheet.create({
     gap: 4,
   },
   cell: {
-    width: 12,
-    height: 12,
-    borderRadius: 3,
+    width: 14,
+    height: 14,
+    borderRadius: 4,
   },
   activeCell: {
     shadowColor: '#FF6B00',
