@@ -17,9 +17,12 @@ export function DayCalendarStrip({ days, currentDay, onDayPress }: DayCalendarSt
   
   // Auto-scroll to current day on mount
   useEffect(() => {
-    if (scrollViewRef.current && currentDay > 3) {
+    if (scrollViewRef.current && currentDay > 2) {
       setTimeout(() => {
-        scrollViewRef.current?.scrollTo({ x: (currentDay - 3) * 70, animated: true });
+        // Scroll so that currentDay is fully visible, pushing earlier days to the left.
+        // Assuming dayCard width is ~64 + 12 gap = 76.
+        const scrollX = Math.max(0, (currentDay - 2) * 76);
+        scrollViewRef.current?.scrollTo({ x: scrollX, animated: true });
       }, 100);
     }
   }, [currentDay]);

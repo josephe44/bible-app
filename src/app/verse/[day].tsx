@@ -187,7 +187,7 @@ export default function VerseDeepDiveScreen() {
                 {
                   color: theme.textSecondary,
                   marginTop: 12,
-                  marginBottom: 32,
+                  marginBottom: 16,
                   opacity: 0.8,
                 },
               ]}
@@ -195,8 +195,16 @@ export default function VerseDeepDiveScreen() {
               {verseEntry.context_after}
             </Text>
           ) : (
-            <View style={{ height: 32 }} />
+            <View style={{ height: 16 }} />
           )}
+
+          <View style={{ flexDirection: 'row', justifyContent: 'flex-end', marginBottom: 24 }}>
+            <View style={{ backgroundColor: 'rgba(200, 134, 42, 0.1)', paddingHorizontal: 10, paddingVertical: 4, borderRadius: 12 }}>
+              <Text style={[TextStyle.caption, { color: theme.primary, textTransform: 'capitalize', fontWeight: '600' }]}>
+                {verseEntry.themes?.[0] || state.plan?.theme || 'General'}
+              </Text>
+            </View>
+          </View>
 
           {(journal || isEditing) && (
             <View

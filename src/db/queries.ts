@@ -104,14 +104,51 @@ export async function insertPlanDays(
   days: { dayNumber: number; verseId: string }[]
 ): Promise<void> {
   const db = await getDatabase();
-  await db.withTransactionAsync(async () => {
-    for (const day of days) {
-      await db.runAsync(
-        'INSERT OR IGNORE INTO plan_days (plan_id, day_number, verse_id) VALUES (?, ?, ?)',
-        [planId, day.dayNumber, day.verseId]
-      );
-    }
-  });
+  for (const day of days) {
+    await db.runAsync(
+      `INSERT INTO plan_days (plan_id, day_number, verse_id) 
+       VALUES (?, ?, ?)
+       ON CONFLICT(plan_id, day_number) DO UPDATE SET verse_id = excluded.verse_id`,
+      [planId, day.dayNumber, day.verseId]
+    );
+  }
+}
+
+import { generatePlanDays } from '@/services/planEngine';
+import allVerses from '@/content/verses.json';
+import type { Theme } from '@/constants/themes';
+
+export async function updateActivePlanSettings(
+  planId: number,
+  newTheme: Theme,
+  newDuration: number,
+  startDate: string,
+  startGeneratingFromDay: number
+) {
+  const db = await getDatabase();
+  
+  // 1. Update the plan table
+  await db.runAsync(
+    'UPDATE plan SET theme = ?, duration_days = ? WHERE id = ?',
+    [newTheme, newDuration, planId]
+  );
+  
+  // 2. Delete all future days that we are going to regenerate
+  await db.runAsync(
+    'DELETE FROM plan_days WHERE plan_id = ? AND day_number >= ?',
+    [planId, startGeneratingFromDay]
+  );
+  
+  // 3. Generate a full plan sequence to ensure we get the correct random pool
+  const fullNewDays = generatePlanDays(allVerses as any, newTheme, newDuration, startDate);
+  
+  // Filter only the days we need to insert
+  const daysToInsert = fullNewDays.filter(d => d.dayNumber >= startGeneratingFromDay);
+  
+  // Insert the days
+  if (daysToInsert.length > 0) {
+    await insertPlanDays(planId, daysToInsert);
+  }
 }
 
 export async function getPlanDays(planId: number): Promise<PlanDay[]> {
