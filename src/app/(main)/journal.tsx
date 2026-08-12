@@ -29,9 +29,18 @@ export default function JournalScreen() {
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: colors.background }]} edges={['top']}>
       <ScrollView contentContainerStyle={styles.scrollContent}>
-        <Text style={[styles.title, { color: colors.textPrimary }, TextStyle.heading1]}>
-          Journal
-        </Text>
+        <View style={styles.header}>
+          <Text style={[styles.title, { color: colors.textPrimary }, TextStyle.heading1]}>
+            Journal
+          </Text>
+          <TouchableOpacity 
+            style={[styles.addButton, { backgroundColor: colors.primary }]} 
+            onPress={() => router.push('/note/new')}
+            activeOpacity={0.8}
+          >
+            <Plus color="#fff" size={20} />
+          </TouchableOpacity>
+        </View>
         
         {entries.length === 0 ? (
           <View style={styles.content}>
@@ -57,14 +66,6 @@ export default function JournalScreen() {
           </View>
         )}
       </ScrollView>
-
-      <TouchableOpacity 
-        style={[styles.fab, { backgroundColor: colors.primary }]} 
-        onPress={() => router.push('/note/new')}
-        activeOpacity={0.8}
-      >
-        <Plus color="#fff" size={24} />
-      </TouchableOpacity>
     </SafeAreaView>
   );
 }
@@ -72,21 +73,25 @@ export default function JournalScreen() {
 const styles = StyleSheet.create({
   container: { flex: 1 },
   scrollContent: { padding: 24, paddingBottom: 100 },
-  title: { marginBottom: 16 },
+  header: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    marginBottom: 16,
+  },
+  title: {},
   content: { marginTop: 16 },
-  fab: {
-    position: 'absolute',
-    bottom: 32,
-    right: 24,
-    width: 56,
-    height: 56,
-    borderRadius: 28,
+  addButton: {
+    width: 36,
+    height: 36,
+    borderRadius: 18,
     alignItems: 'center',
     justifyContent: 'center',
     shadowColor: '#000',
-    shadowOffset: { width: 0, height: 4 },
-    shadowOpacity: 0.3,
-    shadowRadius: 4,
-    elevation: 8,
-  }
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.15,
+    shadowRadius: 3,
+    elevation: 4,
+  },
 });
+
