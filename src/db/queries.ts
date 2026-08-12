@@ -51,6 +51,16 @@ export async function getActivePlan(): Promise<Plan | null> {
   if (!row) return null;
 
   const days = await getPlanDays(row.id);
+  const journalEntries = await getJournalEntries(row.id);
+
+  // Attach journal entries to the corresponding days
+  const daysWithJournals = days.map(day => {
+    const entry = journalEntries.find(j => j.dayNumber === day.dayNumber);
+    return {
+      ...day,
+      journalEntry: entry ? entry.content : null,
+    };
+  });
 
   return {
     id: row.id,
@@ -60,7 +70,7 @@ export async function getActivePlan(): Promise<Plan | null> {
     startDate: row.start_date,
     notificationTime: row.notification_time,
     createdAt: row.created_at,
-    days,
+    days: daysWithJournals,
   };
 }
 

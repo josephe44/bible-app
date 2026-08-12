@@ -96,6 +96,15 @@ export default function VerseDeepDiveScreen() {
           </Text>
         </View>
 
+        {planDay?.journalEntry && (
+          <View style={[styles.card, { backgroundColor: theme.surface, marginTop: 24, borderWidth: 1, borderColor: theme.border }]}>
+            <Text style={[TextStyle.heading3, { color: theme.textPrimary, marginBottom: 12 }]}>Your Reflection</Text>
+            <Text style={[TextStyle.lessonBody, { color: theme.textSecondary, fontStyle: 'italic' }]}>
+              "{planDay.journalEntry}"
+            </Text>
+          </View>
+        )}
+
         <Pressable 
           style={({ pressed }) => [
             styles.beautifulShareButton, 
