@@ -3,9 +3,21 @@ import { Stack } from 'expo-router';
 import * as SplashScreen from 'expo-splash-screen';
 import { useEffect } from 'react';
 import { useFonts } from 'expo-font';
+import {
+  Lora_400Regular,
+  Lora_500Medium,
+  Lora_600SemiBold,
+  Lora_700Bold,
+  Lora_400Regular_Italic,
+} from '@expo-google-fonts/lora';
+import {
+  Inter_400Regular,
+  Inter_500Medium,
+  Inter_600SemiBold,
+  Inter_700Bold,
+} from '@expo-google-fonts/inter';
 import { AppProvider } from '@/context/AppContext';
 import { useTheme } from '@/hooks/useTheme';
-
 SplashScreen.preventAutoHideAsync();
 
 function RootLayoutNav() {
@@ -25,15 +37,15 @@ function RootLayoutNav() {
 
 export default function RootLayout() {
   const [loaded, error] = useFonts({
-    Lora_400Regular: require('@expo-google-fonts/lora/Lora_400Regular.ttf'),
-    Lora_500Medium: require('@expo-google-fonts/lora/Lora_500Medium.ttf'),
-    Lora_600SemiBold: require('@expo-google-fonts/lora/Lora_600SemiBold.ttf'),
-    Lora_700Bold: require('@expo-google-fonts/lora/Lora_700Bold.ttf'),
-    Lora_400Regular_Italic: require('@expo-google-fonts/lora/Lora_400Regular_Italic.ttf'),
-    Inter_400Regular: require('@expo-google-fonts/inter/Inter_400Regular.ttf'),
-    Inter_500Medium: require('@expo-google-fonts/inter/Inter_500Medium.ttf'),
-    Inter_600SemiBold: require('@expo-google-fonts/inter/Inter_600SemiBold.ttf'),
-    Inter_700Bold: require('@expo-google-fonts/inter/Inter_700Bold.ttf'),
+    Lora_400Regular,
+    Lora_500Medium,
+    Lora_600SemiBold,
+    Lora_700Bold,
+    Lora_400Regular_Italic,
+    Inter_400Regular,
+    Inter_500Medium,
+    Inter_600SemiBold,
+    Inter_700Bold,
   });
 
   useEffect(() => {
