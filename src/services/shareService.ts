@@ -2,7 +2,7 @@ import * as Sharing from 'expo-sharing';
 import { captureRef } from 'react-native-view-shot';
 import type { View } from 'react-native';
 
-export async function shareVerseCard(viewRef: React.RefObject<View>) {
+export async function shareVerseCard(viewRef: React.RefObject<View | null>) {
   try {
     if (!viewRef.current) return;
     

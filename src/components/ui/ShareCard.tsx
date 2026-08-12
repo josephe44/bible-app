@@ -21,26 +21,44 @@ export const ShareCard = React.forwardRef<View, ShareCardProps>(
     return (
       <View
         ref={ref}
-        style={[styles.container, { backgroundColor: colors.background, width, height }]}
+        style={[
+          styles.container, 
+          { 
+            backgroundColor: colors.surfaceElevated, 
+            borderColor: colors.border,
+            borderWidth: 1,
+            width, 
+            height 
+          }
+        ]}
       >
         <View style={styles.header}>
-          <BookOpen size={24} color={colors.primary} />
+          <View style={[styles.iconWrapper, { backgroundColor: colors.primary + '20' }]}>
+            <BookOpen size={24} color={colors.primary} />
+          </View>
           <Text style={[styles.brandText, { color: colors.textPrimary }, TextStyle.heading3]}>
             DailyWord
           </Text>
         </View>
 
         <View style={styles.centerContent}>
-          <Text style={[styles.verseText, { color: colors.textPrimary }, TextStyle.verseBody]}>
+          <Text 
+            style={[styles.verseText, { color: colors.textPrimary }, TextStyle.verseBody]}
+            adjustsFontSizeToFit
+            minimumFontScale={0.7}
+            numberOfLines={10}
+          >
             "{verseText}"
           </Text>
-          <Text style={[styles.reference, { color: colors.primary }, TextStyle.verseReference]}>
-            {reference}
-          </Text>
+          <View style={[styles.referenceBadge, { backgroundColor: colors.primary + '15' }]}>
+            <Text style={[styles.reference, { color: colors.primary }, TextStyle.verseReference]}>
+              {reference}
+            </Text>
+          </View>
         </View>
 
         <View style={[styles.footer, { borderTopColor: colors.border }]}>
-          <Text style={[styles.footerText, { color: colors.textSecondary }, TextStyle.label]}>
+          <Text style={[styles.footerText, { color: colors.textSecondary }, TextStyle.caption]}>
             Day {day} • {themeString.charAt(0).toUpperCase() + themeString.slice(1)} Plan
           </Text>
         </View>
@@ -58,11 +76,19 @@ const styles = StyleSheet.create({
     position: 'absolute',
     left: -10000,
     top: -10000,
+    borderRadius: 32,
+    overflow: 'hidden',
   },
   header: {
     flexDirection: 'row',
     alignItems: 'center',
     gap: 12,
+  },
+  iconWrapper: {
+    padding: 10,
+    borderRadius: 16,
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   brandText: {
     letterSpacing: -0.5,
@@ -70,20 +96,27 @@ const styles = StyleSheet.create({
   centerContent: {
     flex: 1,
     justifyContent: 'center',
+    alignItems: 'center',
   },
   verseText: {
     fontSize: 28,
     lineHeight: 40,
     textAlign: 'center',
-    marginBottom: 24,
+    marginBottom: 32,
+  },
+  referenceBadge: {
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    borderRadius: 100,
   },
   reference: {
     textAlign: 'center',
     fontSize: 16,
+    letterSpacing: 0.5,
   },
   footer: {
     paddingTop: 24,
-    borderTopWidth: 1,
+    borderTopWidth: StyleSheet.hairlineWidth,
     alignItems: 'center',
   },
   footerText: {

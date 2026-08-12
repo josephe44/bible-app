@@ -51,24 +51,24 @@ export default function VerseDeepDiveScreen() {
         </Pressable>
         <Text style={[TextStyle.heading3, { color: theme.textPrimary }]}>{(verseEntry as any).reference}</Text>
         <View style={{ flexDirection: 'row' }}>
-          <Pressable onPress={handleShare} style={styles.actionButton}>
-            <Share size={20} color={theme.textPrimary} />
-          </Pressable>
           <Pressable onPress={speak} style={styles.actionButton}>
             <Volume2 size={20} color={theme.primary} />
           </Pressable>
         </View>
       </View>
 
-      <ShareCard 
-        ref={shareCardRef}
-        verseText={verseEntry.text}
-        reference={(verseEntry as any).reference}
-        themeString={state.plan?.theme || 'faith'}
-        day={dayNumber}
-      />
+      {/* Hidden ShareCard for generating the PNG image */}
+      <View style={styles.hiddenShareCard}>
+        <ShareCard 
+          ref={shareCardRef}
+          verseText={verseEntry.text}
+          reference={(verseEntry as any).reference}
+          themeString={state.plan?.theme || 'faith'}
+          day={dayNumber}
+        />
+      </View>
 
-      <ScrollView contentContainerStyle={styles.scrollContent}>
+      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
         {verseEntry.context_before ? (
           <Text style={[TextStyle.lessonBody, { color: theme.textSecondary, marginBottom: 12, opacity: 0.8 }]}>
             {verseEntry.context_before}
@@ -95,6 +95,20 @@ export default function VerseDeepDiveScreen() {
             {verseEntry.key_takeaway}
           </Text>
         </View>
+
+        <Pressable 
+          style={({ pressed }) => [
+            styles.beautifulShareButton, 
+            { backgroundColor: theme.primary },
+            pressed && { opacity: 0.8, transform: [{ scale: 0.98 }] }
+          ]} 
+          onPress={handleShare}
+        >
+          <Share size={20} color="#fff" />
+          <Text style={[TextStyle.heading3, { color: '#fff', marginLeft: 12 }]}>
+            Share Verse Image
+          </Text>
+        </Pressable>
       </ScrollView>
     </View>
   );
@@ -125,5 +139,25 @@ const styles = StyleSheet.create({
     borderRadius: 16,
     padding: 20,
     marginTop: 16,
+  },
+  hiddenShareCard: {
+    position: 'absolute',
+    left: -10000,
+    top: -10000,
+    opacity: 0,
+  },
+  beautifulShareButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    justifyContent: 'center',
+    marginTop: 32,
+    marginBottom: 40,
+    paddingVertical: 16,
+    borderRadius: 100,
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 4 },
+    shadowOpacity: 0.15,
+    shadowRadius: 8,
+    elevation: 4,
   }
 });
