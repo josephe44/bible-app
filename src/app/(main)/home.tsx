@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, AppState } from 'react-native';
 import { useApp } from '@/context/AppContext';
 import { useTheme } from '@/hooks/useTheme';
 import { TextStyle, FontFamily, FontSize } from '@/constants/typography';
@@ -12,6 +12,7 @@ import versesData from '@/content/verses.json';
 import { useRouter } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
 import { MilestoneModal } from '@/components/ui/MilestoneModal';
+import { getTodayDayNumber } from '@/services/planEngine';
 
 export default function HomeScreen() {
   const { state, markRead, saveJournal } = useApp();
@@ -24,15 +25,29 @@ export default function HomeScreen() {
 
   const plan = state.plan;
 
+  const [currentDateString, setCurrentDateString] = React.useState(new Date().toDateString());
+
+  React.useEffect(() => {
+    const handleAppStateChange = (nextAppState: string) => {
+      if (nextAppState === 'active') {
+        const newDateString = new Date().toDateString();
+        if (newDateString !== currentDateString) {
+          setCurrentDateString(newDateString);
+        }
+      }
+    };
+    const subscription = AppState.addEventListener('change', handleAppStateChange);
+    return () => {
+      subscription.remove();
+    };
+  }, [currentDateString]);
+
   // Determine current day number
   const currentDayNumber = useMemo(() => {
     if (!plan) return 1;
-    const start = new Date(plan.startDate).getTime();
-    const now = new Date().getTime();
-    const diff = now - start;
-    const days = Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
-    return Math.max(1, Math.min(days, plan.durationDays));
-  }, [plan]);
+    const dayNumber = getTodayDayNumber(plan.startDate, plan.durationDays);
+    return dayNumber ?? 1;
+  }, [plan, currentDateString]);
 
   const todayPlanDay = plan?.days.find((d) => d.dayNumber === currentDayNumber);
   const verseEntry = todayPlanDay 

@@ -1,4 +1,5 @@
 import { usePlan } from '@/context/AppContext';
+import { getTodayDayNumber } from '@/services/planEngine';
 
 export function useStreak() {
   const plan = usePlan();
@@ -10,11 +11,7 @@ export function useStreak() {
   let currentTempStreak = 0;
 
   // Determine current day number
-  const start = new Date(plan.startDate).getTime();
-  const now = new Date().getTime();
-  const diff = now - start;
-  const days = Math.floor(diff / (1000 * 60 * 60 * 24)) + 1;
-  const currentDayNumber = Math.max(1, Math.min(days, plan.durationDays));
+  const currentDayNumber = getTodayDayNumber(plan.startDate, plan.durationDays) ?? 1;
 
   for (const day of plan.days) {
     if (day.dayNumber > currentDayNumber) break;

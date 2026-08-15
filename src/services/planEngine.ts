@@ -104,13 +104,24 @@ export function generatePlanDays(
  * Returns null if the plan hasn't started yet.
  * Returns durationDays if the plan is complete.
  */
-export function getTodayDayNumber(startDate: string, durationDays: number): number | null {
-  const start = new Date(startDate);
-  start.setHours(0, 0, 0, 0);
-  const today = new Date();
-  today.setHours(0, 0, 0, 0);
+export function parseLocalDate(dateString: string): Date {
+  const parts = dateString.split('-');
+  if (parts.length === 3) {
+    const [year, month, day] = parts.map(Number);
+    return new Date(year, month - 1, day);
+  }
+  return new Date(dateString);
+}
 
-  const diffMs = today.getTime() - start.getTime();
+export function getTodayDayNumber(startDate: string, durationDays: number): number | null {
+  const start = parseLocalDate(startDate);
+  const today = new Date();
+
+  // Convert to UTC midnights for the calendar dates to avoid Daylight Saving Time (DST) edge cases
+  const startUtc = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
+  const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
+
+  const diffMs = todayUtc - startUtc;
   const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
 
   if (diffDays < 0) return null; // Plan hasn't started

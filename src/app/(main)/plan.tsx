@@ -5,6 +5,7 @@ import { PLAN_DURATIONS, PLAN_THEMES } from "@/constants/themes";
 import { TextStyle } from "@/constants/typography";
 import { useApp, usePlan } from "@/context/AppContext";
 import { getAllReadDates, updateActivePlanSettings } from "@/db/queries";
+import { getTodayDayNumber } from "@/services/planEngine";
 import { useTheme } from "@/hooks/useTheme";
 import { useRouter } from "expo-router";
 import {
@@ -48,15 +49,7 @@ export default function PlanScreen() {
     if (!plan) return { readDays: 0, progress: 0, currentDay: 1 };
     const read = plan.days.filter((d) => d.isRead).length;
 
-    // Calculate actual chronological day based on start_date
-    const msPerDay = 1000 * 60 * 60 * 24;
-    const start = new Date(plan.startDate);
-    start.setHours(0, 0, 0, 0);
-    const now = new Date();
-    now.setHours(0, 0, 0, 0);
-    const diffDays = Math.floor((now.getTime() - start.getTime()) / msPerDay);
-
-    const currDay = Math.max(1, Math.min(plan.durationDays, diffDays + 1));
+    const currDay = getTodayDayNumber(plan.startDate, plan.durationDays) ?? 1;
 
     return {
       readDays: read,
