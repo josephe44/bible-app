@@ -14,7 +14,7 @@ import { X, Check } from 'lucide-react-native';
 import { MilestoneModal } from '@/components/ui/MilestoneModal';
 import { MILESTONE_DAYS, PLAN_THEMES } from '@/constants/themes';
 import { useSharedValue } from 'react-native-reanimated';
-import { RunningMan, type Rect, type RunnerAnchors } from '@/components/ui/RunningMan';
+import { RunningMan, type Rect, type RunnerAnchors, type RunnerHandle } from '@/components/ui/RunningMan';
 import { usePlanPhase } from '@/hooks/usePlanPhase';
 import { PlanCompleteView } from '@/components/ui/PlanCompleteView';
 
@@ -32,6 +32,7 @@ export default function HomeScreen() {
 
   // The little man on the header: where he can stand, and whether a finger is down
   const touching = useSharedValue(false);
+  const runnerRef = React.useRef<RunnerHandle>(null);
   const [columnRect, setColumnRect] = React.useState<Rect | null>(null);
   const [captionRect, setCaptionRect] = React.useState<Rect | null>(null);
   const [titleRect, setTitleRect] = React.useState<Rect | null>(null);
@@ -89,6 +90,7 @@ export default function HomeScreen() {
   const handleMarkRead = () => {
     markRead(currentDayNumber);
     if (!todayPlanDay?.isRead) {
+      runnerRef.current?.celebrate();
       // Milestones count days actually read, not the calendar day of the plan.
       const daysRead = plan.days.filter((d) => d.isRead).length + 1;
       if ((MILESTONE_DAYS as readonly number[]).includes(daysRead)) {
@@ -121,7 +123,13 @@ export default function HomeScreen() {
       <ScrollView
         contentContainerStyle={styles.scrollContent}
         showsVerticalScrollIndicator={false}
-        onTouchStart={() => { touching.value = true; }}
+        onTouchStart={(e) => {
+          touching.value = true;
+          runnerRef.current?.touch(e.nativeEvent.pageX, e.nativeEvent.pageY);
+        }}
+        onScroll={(e) => runnerRef.current?.scrolled(e.nativeEvent.contentOffset.y)}
+        scrollEventThrottle={16}
+        alwaysBounceVertical
         onTouchEnd={() => { touching.value = false; }}
         onTouchCancel={() => { touching.value = false; }}
       >
@@ -143,7 +151,7 @@ export default function HomeScreen() {
           <View onLayout={(e) => setBadgeRect(toRect(e.nativeEvent.layout))}>
             <StreakBadge count={currentStreak} />
           </View>
-          <RunningMan anchors={runnerAnchors} touching={touching} />
+          <RunningMan ref={runnerRef} anchors={runnerAnchors} touching={touching} />
         </View>
 
         <VerseCard 
