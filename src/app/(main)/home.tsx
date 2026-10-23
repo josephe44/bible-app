@@ -247,7 +247,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
-    marginTop: 26, // room above the header for the little man
+    marginTop: 18, // room above the header for the little man
     marginBottom: 32,
   },
   button: {

@@ -45,7 +45,7 @@ interface Segment {
 const W = 40;
 const H = 54;
 const FEET_Y = 52;
-const SCALE = 0.78;
+const SCALE = 0.55;
 
 // Bone lengths (sprite units)
 const THIGH = 11;
