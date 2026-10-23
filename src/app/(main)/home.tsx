@@ -12,15 +12,15 @@ import versesData from '@/content/verses.json';
 import { useRouter } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
 import { MilestoneModal } from '@/components/ui/MilestoneModal';
-import { MILESTONE_DAYS } from '@/constants/themes';
+import { MILESTONE_DAYS, PLAN_THEMES } from '@/constants/themes';
 import { usePlanPhase } from '@/hooks/usePlanPhase';
-import { PlanCompleteCard } from '@/components/ui/PlanCompleteCard';
+import { PlanCompleteView } from '@/components/ui/PlanCompleteView';
 
 export default function HomeScreen() {
   const { state, markRead, saveJournal } = useApp();
   const theme = useTheme();
   const router = useRouter();
-  const { currentStreak } = useStreak();
+  const { currentStreak, longestStreak } = useStreak();
   const [journalText, setJournalText] = React.useState('');
   const [isBottomSheetVisible, setBottomSheetVisible] = React.useState(false);
   // Number of days read when a milestone was hit; null when none is showing.
@@ -54,13 +54,18 @@ export default function HomeScreen() {
   if (phase === 'finished') {
     return (
       <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
-          <PlanCompleteCard
-            daysRead={plan.days.filter((d) => d.isRead).length}
-            totalDays={plan.durationDays}
-            onStartNew={() => router.push('/(onboarding)/setup')}
-          />
-        </ScrollView>
+        <PlanCompleteView
+          themeLabel={PLAN_THEMES.find((t) => t.id === plan.theme)?.label ?? 'reading'}
+          daysRead={plan.days.filter((d) => d.isRead).length}
+          totalDays={plan.durationDays}
+          bestStreak={longestStreak}
+          reflections={plan.days.filter((d) => d.journalEntry?.trim()).length}
+          closingVerse={
+            verseEntry ? { reference: verseEntry.reference, text: verseEntry.text } : null
+          }
+          onStartNew={() => router.push('/(onboarding)/setup')}
+          onOpenJournal={() => router.navigate('/(main)/journal')}
+        />
       </SafeAreaView>
     );
   }

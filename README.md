@@ -31,9 +31,9 @@ Built with Expo and React Native. No accounts, no backend, no tracking: everythi
 | :---: | :---: | :---: |
 | <img src="docs/screenshots/today.png" width="220" alt="Today" /> | <img src="docs/screenshots/plan.png" width="220" alt="Plan with streak heat map and progress ring" /> | <img src="docs/screenshots/journal.png" width="220" alt="Journal" /> |
 
-| Settings | Dark mode |
-| :---: | :---: |
-| <img src="docs/screenshots/settings.png" width="220" alt="Settings" /> | <img src="docs/screenshots/today-dark.png" width="220" alt="Today in dark mode" /> |
+| Plan complete | Settings | Dark mode |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/plan-complete.png" width="220" alt="Plan complete celebration" /> | <img src="docs/screenshots/settings.png" width="220" alt="Settings" /> | <img src="docs/screenshots/today-dark.png" width="220" alt="Today in dark mode" /> |
 
 ## Tech stack
 
