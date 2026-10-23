@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard, AppState } from 'react-native';
+import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useApp } from '@/context/AppContext';
 import { useTheme } from '@/hooks/useTheme';
 import { TextStyle, FontFamily, FontSize } from '@/constants/typography';
@@ -12,7 +12,9 @@ import versesData from '@/content/verses.json';
 import { useRouter } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
 import { MilestoneModal } from '@/components/ui/MilestoneModal';
-import { getTodayDayNumber } from '@/services/planEngine';
+import { MILESTONE_DAYS } from '@/constants/themes';
+import { usePlanPhase } from '@/hooks/usePlanPhase';
+import { PlanCompleteCard } from '@/components/ui/PlanCompleteCard';
 
 export default function HomeScreen() {
   const { state, markRead, saveJournal } = useApp();
@@ -21,33 +23,12 @@ export default function HomeScreen() {
   const { currentStreak } = useStreak();
   const [journalText, setJournalText] = React.useState('');
   const [isBottomSheetVisible, setBottomSheetVisible] = React.useState(false);
-  const [showMilestone, setShowMilestone] = React.useState(false);
+  // Number of days read when a milestone was hit; null when none is showing.
+  const [milestone, setMilestone] = React.useState<number | null>(null);
 
   const plan = state.plan;
 
-  const [currentDateString, setCurrentDateString] = React.useState(new Date().toDateString());
-
-  React.useEffect(() => {
-    const handleAppStateChange = (nextAppState: string) => {
-      if (nextAppState === 'active') {
-        const newDateString = new Date().toDateString();
-        if (newDateString !== currentDateString) {
-          setCurrentDateString(newDateString);
-        }
-      }
-    };
-    const subscription = AppState.addEventListener('change', handleAppStateChange);
-    return () => {
-      subscription.remove();
-    };
-  }, [currentDateString]);
-
-  // Determine current day number
-  const currentDayNumber = useMemo(() => {
-    if (!plan) return 1;
-    const dayNumber = getTodayDayNumber(plan.startDate, plan.durationDays);
-    return dayNumber ?? 1;
-  }, [plan, currentDateString]);
+  const { phase, dayNumber: currentDayNumber } = usePlanPhase(plan);
 
   const todayPlanDay = plan?.days.find((d) => d.dayNumber === currentDayNumber);
   const verseEntry = todayPlanDay 
@@ -70,10 +51,28 @@ export default function HomeScreen() {
     );
   }
 
+  if (phase === 'finished') {
+    return (
+      <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
+        <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+          <PlanCompleteCard
+            daysRead={plan.days.filter((d) => d.isRead).length}
+            totalDays={plan.durationDays}
+            onStartNew={() => router.push('/(onboarding)/setup')}
+          />
+        </ScrollView>
+      </SafeAreaView>
+    );
+  }
+
   const handleMarkRead = () => {
     markRead(currentDayNumber);
-    if (!todayPlanDay?.isRead && [7, 14, 21, 30].includes(currentDayNumber)) {
-      setShowMilestone(true);
+    if (!todayPlanDay?.isRead) {
+      // Milestones count days actually read, not the calendar day of the plan.
+      const daysRead = plan.days.filter((d) => d.isRead).length + 1;
+      if ((MILESTONE_DAYS as readonly number[]).includes(daysRead)) {
+        setMilestone(daysRead);
+      }
     }
   };
 
@@ -144,9 +143,9 @@ export default function HomeScreen() {
       </ScrollView>
 
       <MilestoneModal 
-        visible={showMilestone} 
-        day={currentDayNumber} 
-        onClose={() => setShowMilestone(false)} 
+        visible={milestone !== null} 
+        day={milestone ?? 0} 
+        onClose={() => setMilestone(null)} 
       />
 
       <Modal

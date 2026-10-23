@@ -1,7 +1,7 @@
 #!/usr/bin/env node
 /**
  * Eword — Verse Content Fetcher Script (KJV only)
- * Fetches 30 curated Bible verses from bible-api.com in KJV translation.
+ * Fetches curated Bible verses from bible-api.com in KJV translation.
  * Run: npm run fetch-verses
  * Output: src/content/verses.json
  */
@@ -10,7 +10,8 @@ const fs = require('fs');
 const path = require('path');
 const https = require('https');
 
-// Our 30 curated verses: 6 per theme
+// Curated verses, tagged by theme. Healing and Gratitude have their own sections
+// so those plans are not padded out with unrelated verses.
 const VERSE_PLAN = [
   // ── HOPE ──
   { id: 'JER-29-11',   ref: 'jeremiah 29:11',    book: 'Jeremiah',      chapter: 29,  verse: 11,  themes: ['hope', 'general'] },
@@ -38,7 +39,7 @@ const VERSE_PLAN = [
 
   // ── PEACE ──
   { id: 'JHN-14-27',   ref: 'john 14:27',         book: 'John',          chapter: 14,  verse: 27,  themes: ['peace', 'general'] },
-  { id: 'PHP-4-6',     ref: 'philippians 4:6',    book: 'Philippians',   chapter: 4,   verse: 6,   themes: ['peace'] },
+  { id: 'PHP-4-6',     ref: 'philippians 4:6',    book: 'Philippians',   chapter: 4,   verse: 6,   themes: ['peace', 'gratitude'] },
   { id: 'ISA-26-3',    ref: 'isaiah 26:3',        book: 'Isaiah',        chapter: 26,  verse: 3,   themes: ['peace'] },
   { id: 'PSA-23-1',    ref: 'psalms 23:1',        book: 'Psalms',        chapter: 23,  verse: 1,   themes: ['peace', 'hope'] },
   { id: 'MAT-11-28',   ref: 'matthew 11:28',      book: 'Matthew',       chapter: 11,  verse: 28,  themes: ['peace', 'strength'] },
@@ -51,27 +52,60 @@ const VERSE_PLAN = [
   { id: 'PRO-1-7',     ref: 'proverbs 1:7',       book: 'Proverbs',      chapter: 1,   verse: 7,   themes: ['wisdom'] },
   { id: 'PRO-4-7',     ref: 'proverbs 4:7',       book: 'Proverbs',      chapter: 4,   verse: 7,   themes: ['wisdom'] },
   { id: 'JHN-1-1',     ref: 'john 1:1',           book: 'John',          chapter: 1,   verse: 1,   themes: ['wisdom', 'general'] },
+
+  // ── GRATITUDE ──
+  { id: 'PSA-107-1',   ref: 'psalms 107:1',       book: 'Psalms',        chapter: 107, verse: 1,   themes: ['gratitude'] },
+  { id: '1TH-5-18',    ref: '1 thessalonians 5:18', book: '1 Thessalonians', chapter: 5, verse: 18, themes: ['gratitude'] },
+  { id: 'PSA-100-4',   ref: 'psalms 100:4',       book: 'Psalms',        chapter: 100, verse: 4,   themes: ['gratitude'] },
+  { id: 'COL-3-17',    ref: 'colossians 3:17',    book: 'Colossians',    chapter: 3,   verse: 17,  themes: ['gratitude'] },
+  { id: 'PSA-118-24',  ref: 'psalms 118:24',      book: 'Psalms',        chapter: 118, verse: 24,  themes: ['gratitude'] },
+
+  // ── HEALING ──
+  { id: 'PSA-147-3',   ref: 'psalms 147:3',       book: 'Psalms',        chapter: 147, verse: 3,   themes: ['healing', 'hope'] },
+  { id: 'JER-17-14',   ref: 'jeremiah 17:14',     book: 'Jeremiah',      chapter: 17,  verse: 14,  themes: ['healing'] },
+  { id: 'ISA-53-5',    ref: 'isaiah 53:5',        book: 'Isaiah',        chapter: 53,  verse: 5,   themes: ['healing'] },
+  { id: 'PSA-34-18',   ref: 'psalms 34:18',       book: 'Psalms',        chapter: 34,  verse: 18,  themes: ['healing', 'peace'] },
+  { id: 'JER-30-17',   ref: 'jeremiah 30:17',     book: 'Jeremiah',      chapter: 30,  verse: 17,  themes: ['healing'] },
+  { id: '1PE-2-24',    ref: '1 peter 2:24',       book: '1 Peter',       chapter: 2,   verse: 24,  themes: ['healing', 'faith'] },
 ];
 
-function fetchVerse(ref) {
+function fetchVerseOnce(ref) {
   return new Promise((resolve, reject) => {
     const encoded = encodeURIComponent(ref);
     const url = `https://bible-api.com/${encoded}?translation=kjv`;
     https.get(url, (res) => {
+      res.setEncoding('utf8'); // decode whole chunks; avoids splitting multibyte characters
       let data = '';
       res.on('data', (chunk) => { data += chunk; });
       res.on('end', () => {
+        if (res.statusCode !== 200) {
+          return reject(new Error(`HTTP ${res.statusCode}`));
+        }
         try {
           const json = JSON.parse(data);
           const text = json.text ? json.text.trim().replace(/\s+/g, ' ') : '';
-          const reference = json.reference || '';
-          resolve({ text, reference });
-        } catch {
-          resolve({ text: '', reference: '' });
+          if (!text) return reject(new Error('empty text in response'));
+          resolve({ text, reference: json.reference || '' });
+        } catch (e) {
+          reject(new Error(`bad response: ${e.message}`));
         }
       });
     }).on('error', reject);
   });
+}
+
+// The API rate-limits; retry with a growing pause instead of silently skipping.
+async function fetchVerse(ref) {
+  let lastError;
+  for (let attempt = 1; attempt <= 5; attempt++) {
+    try {
+      return await fetchVerseOnce(ref);
+    } catch (e) {
+      lastError = e;
+      await delay(1500 * attempt);
+    }
+  }
+  throw lastError;
 }
 
 function delay(ms) {
@@ -81,6 +115,7 @@ function delay(ms) {
 async function main() {
   console.log(`📖 Fetching ${VERSE_PLAN.length} KJV verses from bible-api.com...`);
   const results = [];
+  const failed = [];
 
   for (let i = 0; i < VERSE_PLAN.length; i++) {
     const verse = VERSE_PLAN[i];
@@ -101,10 +136,17 @@ async function main() {
         context_before: '',
         context_after: '',
       });
-      await delay(300); // Respect rate limit
+      await delay(700); // Respect rate limit
     } catch (e) {
+      failed.push(verse.id);
       console.warn(`    ⚠️  Failed to fetch ${verse.id}: ${e.message}`);
     }
+  }
+
+  // Never overwrite the library with a partial result.
+  if (failed.length > 0) {
+    console.error(`\n❌ ${failed.length} verse(s) failed (${failed.join(', ')}). Nothing was written; try again.`);
+    process.exit(1);
   }
 
   const outputPath = path.join(__dirname, '..', 'src', 'content', 'verses.json');

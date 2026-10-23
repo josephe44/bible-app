@@ -6,7 +6,7 @@ import { TextStyle } from '@/constants/typography';
 import { SafeAreaView } from 'react-native-safe-area-context';
 import { PLAN_DURATIONS, PLAN_THEMES, type PlanDurationPreset, type Theme } from '@/constants/themes';
 import { createPlan, insertPlanDays } from '@/db/queries';
-import { generatePlanDays } from '@/services/planEngine';
+import { generatePlanDays, toLocalDateString } from '@/services/planEngine';
 import allVerses from '@/content/verses.json';
 import { useApp } from '@/context/AppContext';
 import type { VerseEntry } from '@/types';
@@ -38,7 +38,7 @@ export default function SetupScreen() {
     if (!duration || !planTheme) return;
 
     try {
-      const startDate = new Date().toISOString().split('T')[0];
+      const startDate = toLocalDateString();
       const planId = await createPlan({
         theme: planTheme,
         translation: 'kjv',

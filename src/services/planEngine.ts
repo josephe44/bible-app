@@ -23,9 +23,16 @@ function createSeededRandom(seed: number) {
   };
 }
 
-function seedFromDate(dateString: string): number {
-  // Convert "YYYY-MM-DD" to a stable integer seed
-  return dateString.split('-').reduce((acc, part, i) => acc + parseInt(part) * (i + 1) * 100, 0);
+function seedFromPlan(theme: string, startDate: string): number {
+  // FNV-1a hash of "theme|YYYY-MM-DD". Hashing (rather than summing the date
+  // parts) keeps different dates and themes from sharing a seed.
+  const input = `${theme}|${startDate}`;
+  let hash = 0x811c9dc5;
+  for (let i = 0; i < input.length; i++) {
+    hash ^= input.charCodeAt(i);
+    hash = Math.imul(hash, 0x01000193);
+  }
+  return hash >>> 0;
 }
 
 // ─────────────────────────────────────────
@@ -62,9 +69,13 @@ export interface PlanDayAssignment {
 /**
  * Generates a deterministic list of verse assignments for a plan.
  *
- * - Filters the verse library by theme
- * - If the duration > available verses, cycles through them with shuffled repeats
- * - Uses a seeded PRNG so the same startDate + theme always yields the same plan
+ * - Each pass through the library lists the theme's verses first, then the
+ *   rest, each group shuffled, so no verse repeats until every verse has been
+ *   used. A theme with few verses (or none) is topped up from the library
+ *   rather than repeating the same verses.
+ * - If the duration exceeds the library, further passes are reshuffled; a pass
+ *   never starts with the verse the previous one ended on.
+ * - Uses a seeded PRNG so the same theme + startDate always yields the same plan.
  */
 export function generatePlanDays(
   allVerses: VerseEntry[],
@@ -72,21 +83,22 @@ export function generatePlanDays(
   durationDays: number,
   startDate: string
 ): PlanDayAssignment[] {
-  const seed = seedFromDate(startDate);
-  const random = createSeededRandom(seed);
+  const random = createSeededRandom(seedFromPlan(theme, startDate));
 
-  let pool = filterByTheme(allVerses, theme);
+  const themed = filterByTheme(allVerses, theme);
+  const themedIds = new Set(themed.map((v) => v.id));
+  const rest = allVerses.filter((v) => !themedIds.has(v.id));
 
-  // Fallback: if theme has no verses, use all verses
-  if (pool.length === 0) {
-    pool = allVerses;
-  }
+  const selected: VerseEntry[] = [];
+  while (selected.length < durationDays && allVerses.length > 0) {
+    const pass = [...seededShuffle(themed, random), ...seededShuffle(rest, random)];
 
-  // Build enough verses for the full plan duration
-  let selected: VerseEntry[] = [];
-  while (selected.length < durationDays) {
-    const shuffled = seededShuffle(pool, random);
-    selected = [...selected, ...shuffled];
+    // Avoid the same verse on back-to-back days across the seam between passes
+    const last = selected[selected.length - 1];
+    if (last && pass.length > 1 && pass[0].id === last.id) {
+      [pass[0], pass[1]] = [pass[1], pass[0]];
+    }
+    selected.push(...pass);
   }
 
   return selected.slice(0, durationDays).map((verse, index) => ({
@@ -113,7 +125,16 @@ export function parseLocalDate(dateString: string): Date {
   return new Date(dateString);
 }
 
-export function getTodayDayNumber(startDate: string, durationDays: number): number | null {
+/** Formats a date as "YYYY-MM-DD" in the device's local time zone (not UTC). */
+export function toLocalDateString(date: Date = new Date()): string {
+  const y = date.getFullYear();
+  const m = String(date.getMonth() + 1).padStart(2, '0');
+  const d = String(date.getDate()).padStart(2, '0');
+  return `${y}-${m}-${d}`;
+}
+
+/** Whole calendar days from the plan's start date to today (0 on the start day). */
+function daysSinceStart(startDate: string): number {
   const start = parseLocalDate(startDate);
   const today = new Date();
 
@@ -121,26 +142,49 @@ export function getTodayDayNumber(startDate: string, durationDays: number): numb
   const startUtc = Date.UTC(start.getFullYear(), start.getMonth(), start.getDate());
   const todayUtc = Date.UTC(today.getFullYear(), today.getMonth(), today.getDate());
 
-  const diffMs = todayUtc - startUtc;
-  const diffDays = Math.floor(diffMs / (1000 * 60 * 60 * 24));
+  return Math.floor((todayUtc - startUtc) / (1000 * 60 * 60 * 24));
+}
+
+export function getTodayDayNumber(startDate: string, durationDays: number): number | null {
+  const diffDays = daysSinceStart(startDate);
 
   if (diffDays < 0) return null; // Plan hasn't started
   return Math.min(diffDays + 1, durationDays);
+}
+
+export type PlanPhase = 'upcoming' | 'active' | 'finished';
+
+/**
+ * Tells "on the last day" apart from "past the end", which getTodayDayNumber
+ * cannot (it clamps both to durationDays).
+ * - upcoming: the start date is in the future
+ * - active:   dayNumber is today's day, 1..durationDays
+ * - finished: today is after the last day; dayNumber is durationDays
+ */
+export function getPlanPhase(
+  startDate: string,
+  durationDays: number
+): { phase: PlanPhase; dayNumber: number } {
+  const diffDays = daysSinceStart(startDate);
+
+  if (diffDays < 0) return { phase: 'upcoming', dayNumber: 1 };
+  if (diffDays >= durationDays) return { phase: 'finished', dayNumber: durationDays };
+  return { phase: 'active', dayNumber: diffDays + 1 };
 }
 
 /**
  * Checks if a day is today
  */
 export function isToday(startDate: string, dayNumber: number): boolean {
-  return getTodayDayNumber(startDate, dayNumber) === dayNumber;
+  return daysSinceStart(startDate) + 1 === dayNumber;
 }
 
 /**
- * Checks if the plan is complete
+ * Checks if the plan is over: today is after its last day.
+ * (On the last day itself the plan is still active.)
  */
 export function isPlanComplete(startDate: string, durationDays: number): boolean {
-  const todayDay = getTodayDayNumber(startDate, durationDays);
-  return todayDay !== null && todayDay >= durationDays;
+  return getPlanPhase(startDate, durationDays).phase === 'finished';
 }
 
 // ─────────────────────────────────────────
@@ -173,6 +217,8 @@ export function calculateStreak(
     if (readSet.has(day)) {
       current++;
       missed = 0;
+    } else if (day === todayDay) {
+      continue; // Today is still open; it isn't a miss until the day is over
     } else {
       missed++;
       if (missed > 1) break; // Only 1 grace day allowed

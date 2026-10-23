@@ -14,7 +14,7 @@ Built with Expo and React Native. No accounts, no backend, no tracking: everythi
 
 - **Themed reading plans.** Choose a theme (General, Hope, Faith, Strength, Peace, Wisdom, Gratitude, Healing) and a length (7, 14, 30, 60 or 90 days, or a custom number).
 - **Today's Word.** One verse a day, set in a serif reading face, with a lesson section and a one-line takeaway you write yourself.
-- **Streaks and progress.** A monthly heat map, a progress ring, and a streak that forgives a single missed day.
+- **Streaks and progress.** A monthly heat map, a progress ring, and a reading streak.
 - **Journal.** Free-form notes and per-day reflections, with a saved version history for each entry.
 - **Daily reminders.** Local notifications at a time you pick, either as a normal notification or as an alarm-style sound.
 - **Read aloud.** Text-to-speech for the verse, using the best English voice installed on the device.
@@ -74,8 +74,7 @@ The app uses native modules (SQLite, MMKV, notifications, native tabs), so it ne
 | `npm start` | Start the Expo dev server |
 | `npm run ios` / `npm run android` | Build and run the native app |
 | `npm run web` | Start the web target |
-| `npm run lint` | Lint with `expo lint` |
-| `npm run fetch-verses` | Regenerate `src/content/verses.json` from bible-api.com (KJV) |
+| `npm run fetch-verses` | Regenerate `src/content/verses.json` from bible-api.com (KJV); writes nothing unless every verse downloads |
 
 ## Project structure
 
@@ -105,11 +104,11 @@ scripts/          verse fetcher
 
 **Versioned migrations.** `src/db/schema.ts` tracks applied versions in a `schema_migrations` table and runs only the new ones. Adding a column (journal version history was added this way) is a new entry in the list, so existing installs upgrade in place without losing data.
 
-**Deterministic plan generation.** `planEngine.ts` shuffles the verses for a theme using a seeded PRNG (mulberry32) keyed on the start date. The same start date and theme always produce the same plan, so a plan can be rebuilt or debugged without storing extra state. When a plan is longer than the verse pool, the pool is reshuffled and repeated.
+**Deterministic plan generation.** `planEngine.ts` orders the verses with a seeded PRNG (mulberry32) whose seed is a hash of the theme and start date. The same theme and start date always produce the same plan, so a plan can be rebuilt without storing extra state. Each pass lists the theme's verses first and then the rest of the library, so a theme with few verses is topped up with other verses instead of repeating, and no verse repeats until the whole library has been used.
 
 **Calendar-date day math.** The current day number is computed from local calendar dates converted to UTC midnights, not from elapsed milliseconds, so daylight-saving changes cannot shift a day. The app also refreshes the current day when it returns to the foreground.
 
-**A forgiving streak.** One missed day does not break a streak. Missing two in a row does. The goal is to encourage a habit, not punish a bad day, and the rule lives in a single pure function (`calculateStreak`).
+**A forgiving streak.** One missed day does not break a streak; two in a row do. Today, which is still open, never counts as a miss. The rule lives in a single pure function (`calculateStreak`).
 
 **Bundled, public-domain text.** Verses ship as `verses.json` in the King James Version, which is public domain, so there are no licensing or API-key concerns. Translations are modelled in the schema (`translation` column) so more can be added later.
 
@@ -123,15 +122,16 @@ scripts/          verse fetcher
 
 Eword is early. Things to know before you build on it:
 
-- The library currently has **30 curated verses**. The devotional `lesson`, `key_takeaway` and context fields in `verses.json` are **placeholders** waiting for real content. Contributions are very welcome here.
+- The library currently has **41 curated KJV verses**. The devotional `lesson`, `key_takeaway` and context fields in `verses.json` are **placeholders** waiting for real content. Contributions are very welcome here.
 - Only the **KJV** translation is available.
+- Plans longer than 41 days repeat verses, because the library is finite. More verses are the fix.
 - Only **one active plan** is supported at a time. Support for two simultaneous plans is designed but not built.
-- The "Healing" theme exists in the picker but no verses are tagged with it yet, so it falls back to the full verse pool.
+- Reminders are a repeating daily notification. The app cancels it the next time it is opened after your plan ends, so if you never open the app again you will keep getting the reminder until you turn it off in system settings.
 - Screenshots above were captured on an iOS simulator. Android configuration is included but has not been verified here.
 
 ## Contributing
 
-Issues and pull requests are welcome. Good first contributions: writing lessons for the verses, adding verses (see `scripts/fetch-verses.js` for the format), adding translations that are legally redistributable, and Android testing. Please run `npm run lint` before opening a PR.
+Issues and pull requests are welcome. Good first contributions: writing lessons for the verses, adding verses (see `scripts/fetch-verses.js` for the format), adding translations that are legally redistributable, and Android testing. Please make sure `npx tsc --noEmit` passes before opening a PR (one pre-existing error in `app-tabs.web.tsx` is known).
 
 ## License
 
