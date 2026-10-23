@@ -1,56 +1,138 @@
-# Welcome to your Expo app 👋
+# Eword
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+A calm, offline-first daily Bible reading app. Pick a theme and a length, and Eword builds a reading plan, one verse a day, with a reminder, a streak, and a journal to capture your reflections.
 
-## Get started
+Built with Expo and React Native. No accounts, no backend, no tracking: everything stays on your device.
 
-1. Install dependencies
+<p align="center">
+  <img src="docs/screenshots/today.png" width="240" alt="Today's Word" />
+  <img src="docs/screenshots/plan.png" width="240" alt="Your Plan" />
+  <img src="docs/screenshots/journal.png" width="240" alt="Journal" />
+</p>
 
-   ```bash
-   npm install
-   ```
+## Features
 
-2. Start the app
+- **Themed reading plans.** Choose a theme (General, Hope, Faith, Strength, Peace, Wisdom, Gratitude, Healing) and a length (7, 14, 30, 60 or 90 days, or a custom number).
+- **Today's Word.** One verse a day, set in a serif reading face, with a lesson section and a one-line takeaway you write yourself.
+- **Streaks and progress.** A monthly heat map, a progress ring, and a streak that forgives a single missed day.
+- **Journal.** Free-form notes and per-day reflections, with a saved version history for each entry.
+- **Daily reminders.** Local notifications at a time you pick, either as a normal notification or as an alarm-style sound.
+- **Read aloud.** Text-to-speech for the verse, using the best English voice installed on the device.
+- **Share cards.** Render a verse as an image and share it.
+- **Light and dark themes**, plus milestone celebrations at 7, 14, 21, 30, 60 and 90 days.
 
-   ```bash
-   npx expo start
-   ```
+## Screenshots
 
-In the output, you'll find options to open the app in a
+| Onboarding | Plan setup | Verse |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/onboarding.png" width="220" alt="Onboarding" /> | <img src="docs/screenshots/plan-setup.png" width="220" alt="Plan setup" /> | <img src="docs/screenshots/verse.png" width="220" alt="Verse detail with share and read-aloud" /> |
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+| Today | Plan | Journal |
+| :---: | :---: | :---: |
+| <img src="docs/screenshots/today.png" width="220" alt="Today" /> | <img src="docs/screenshots/plan.png" width="220" alt="Plan with streak heat map and progress ring" /> | <img src="docs/screenshots/journal.png" width="220" alt="Journal" /> |
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+| Settings | Dark mode |
+| :---: | :---: |
+| <img src="docs/screenshots/settings.png" width="220" alt="Settings" /> | <img src="docs/screenshots/today-dark.png" width="220" alt="Today in dark mode" /> |
 
-## Get a fresh project
+## Tech stack
 
-When you're ready, run:
+| Area | Choice |
+| --- | --- |
+| Framework | [Expo](https://expo.dev) SDK 57, React Native 0.86, React 19, TypeScript |
+| Navigation | [Expo Router](https://docs.expo.dev/router/introduction/) (file-based, typed routes) with native tabs |
+| Persistence | `expo-sqlite` for plans, reading history and journal; `react-native-mmkv` for small synchronous settings |
+| State | React Context + `useReducer` (no external state library) |
+| Animation and gestures | `react-native-reanimated`, `react-native-gesture-handler` |
+| Notifications | `expo-notifications` (local, scheduled on device) |
+| Media | `expo-speech` (read aloud), `react-native-view-shot` + `expo-sharing` (share cards) |
+| UI | `lucide-react-native` icons, `react-native-svg`, Lora (verses) and Inter (UI) via `@expo-google-fonts` |
+| Build | EAS Build, React Compiler enabled |
+
+## Getting started
+
+Requirements: a current Node.js LTS, and Xcode (iOS) or Android Studio (Android) for native builds.
 
 ```bash
-npm run reset-project
+git clone <your-fork-or-this-repo-url>
+cd bible-app
+npm install
+
+# Build and run a development build
+npm run ios        # or: npm run android
+
+# Later, just start the dev server
+npm start
 ```
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+The app uses native modules (SQLite, MMKV, notifications, native tabs), so it needs a **development build**; Expo Go is not enough.
 
-### Other setup steps
+### Scripts
 
-- To set up ESLint for linting, run `npx expo lint`, or follow our guide on ["Using ESLint and Prettier"](https://docs.expo.dev/guides/using-eslint/)
-- If you'd like to set up unit testing, follow our guide on ["Unit Testing with Jest"](https://docs.expo.dev/develop/unit-testing/)
-- Learn more about the TypeScript setup in this template in our guide on ["Using TypeScript"](https://docs.expo.dev/guides/typescript/)
+| Script | What it does |
+| --- | --- |
+| `npm start` | Start the Expo dev server |
+| `npm run ios` / `npm run android` | Build and run the native app |
+| `npm run web` | Start the web target |
+| `npm run lint` | Lint with `expo lint` |
+| `npm run fetch-verses` | Regenerate `src/content/verses.json` from bible-api.com (KJV) |
 
-## Learn more
+## Project structure
 
-To learn more about developing your project with Expo, look at the following resources:
+```
+src/
+  app/            Expo Router routes
+    (onboarding)/   welcome + plan setup wizard
+    (main)/         Today, Plan, Journal, Settings tabs
+    verse/[day]     verse detail, read aloud, share
+    note/[id]       note editor with version history
+  components/     UI building blocks (verse card, heat map, progress ring, ...)
+  constants/      colors, typography, themes and durations
+  content/        verses.json, the bundled verse library
+  context/        AppContext: active plan state hydrated from SQLite
+  db/             schema + versioned migrations, queries
+  hooks/          theme, streak, notifications
+  services/       planEngine (plan generation, streaks), shareService
+  utils/          MMKV storage wrapper
+scripts/          verse fetcher
+```
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
+## Key decisions
 
-## Join the community
+**Local-first, no backend.** A devotional app holds private reflections, so nothing leaves the device: no sign-in, no sync service, no analytics. It also makes the app work fully offline and removes any server cost, which suits an open-source project anyone can fork and run.
 
-Join our community of developers creating universal apps.
+**SQLite for data, MMKV for settings.** Plans, reading history and journal entries are relational (a plan has days, days have journal entries) and benefit from foreign keys, `UNIQUE(plan_id, day_number)` constraints and cascading deletes. Settings such as reminder mode and dark mode are read at startup or inside notification handlers, where a synchronous key-value store is simpler than awaiting a query.
 
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+**Versioned migrations.** `src/db/schema.ts` tracks applied versions in a `schema_migrations` table and runs only the new ones. Adding a column (journal version history was added this way) is a new entry in the list, so existing installs upgrade in place without losing data.
+
+**Deterministic plan generation.** `planEngine.ts` shuffles the verses for a theme using a seeded PRNG (mulberry32) keyed on the start date. The same start date and theme always produce the same plan, so a plan can be rebuilt or debugged without storing extra state. When a plan is longer than the verse pool, the pool is reshuffled and repeated.
+
+**Calendar-date day math.** The current day number is computed from local calendar dates converted to UTC midnights, not from elapsed milliseconds, so daylight-saving changes cannot shift a day. The app also refreshes the current day when it returns to the foreground.
+
+**A forgiving streak.** One missed day does not break a streak. Missing two in a row does. The goal is to encourage a habit, not punish a bad day, and the rule lives in a single pure function (`calculateStreak`).
+
+**Bundled, public-domain text.** Verses ship as `verses.json` in the King James Version, which is public domain, so there are no licensing or API-key concerns. Translations are modelled in the schema (`translation` column) so more can be added later.
+
+**Context + reducer instead of a state library.** The app has one piece of global state, the active plan, hydrated from SQLite. `useReducer` keeps updates explicit and testable without adding a dependency.
+
+**Native tabs and platform feel.** Navigation uses Expo Router's native tab bar so it picks up the platform's look, including the glass effect on recent iOS. Typography pairs a serif (Lora) for scripture with a clean sans (Inter) for the interface.
+
+**Design tokens.** Colors, type scale and themes are centralized in `src/constants`, with a warm gold and forest green palette and parallel light and dark values.
+
+## Status and roadmap
+
+Eword is early. Things to know before you build on it:
+
+- The library currently has **30 curated verses**. The devotional `lesson`, `key_takeaway` and context fields in `verses.json` are **placeholders** waiting for real content. Contributions are very welcome here.
+- Only the **KJV** translation is available.
+- Only **one active plan** is supported at a time. Support for two simultaneous plans is designed but not built.
+- The "Healing" theme exists in the picker but no verses are tagged with it yet, so it falls back to the full verse pool.
+- Screenshots above were captured on an iOS simulator. Android configuration is included but has not been verified here.
+
+## Contributing
+
+Issues and pull requests are welcome. Good first contributions: writing lessons for the verses, adding verses (see `scripts/fetch-verses.js` for the format), adding translations that are legally redistributable, and Android testing. Please run `npm run lint` before opening a PR.
+
+## License
+
+See [LICENSE](LICENSE).
