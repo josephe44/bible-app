@@ -1,5 +1,5 @@
 import React, { useMemo } from 'react';
-import { View, Text, StyleSheet, ScrollView, Pressable, TextInput, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
+import { View, Text, type LayoutRectangle, StyleSheet, ScrollView, Pressable, TextInput, Modal, KeyboardAvoidingView, Platform, TouchableWithoutFeedback, Keyboard } from 'react-native';
 import { useApp } from '@/context/AppContext';
 import { useTheme } from '@/hooks/useTheme';
 import { TextStyle, FontFamily, FontSize } from '@/constants/typography';
@@ -13,6 +13,8 @@ import { useRouter } from 'expo-router';
 import { X, Check } from 'lucide-react-native';
 import { MilestoneModal } from '@/components/ui/MilestoneModal';
 import { MILESTONE_DAYS, PLAN_THEMES } from '@/constants/themes';
+import { useSharedValue } from 'react-native-reanimated';
+import { RunningMan, type Rect, type RunnerAnchors } from '@/components/ui/RunningMan';
 import { usePlanPhase } from '@/hooks/usePlanPhase';
 import { PlanCompleteView } from '@/components/ui/PlanCompleteView';
 
@@ -27,6 +29,20 @@ export default function HomeScreen() {
   const [milestone, setMilestone] = React.useState<number | null>(null);
 
   const plan = state.plan;
+
+  // The little man on the header: where he can stand, and whether a finger is down
+  const touching = useSharedValue(false);
+  const [columnRect, setColumnRect] = React.useState<Rect | null>(null);
+  const [captionRect, setCaptionRect] = React.useState<Rect | null>(null);
+  const [titleRect, setTitleRect] = React.useState<Rect | null>(null);
+  const [badgeRect, setBadgeRect] = React.useState<Rect | null>(null);
+  const runnerAnchors = React.useMemo<RunnerAnchors | null>(() => {
+    if (!columnRect || !captionRect || !titleRect || !badgeRect) return null;
+    // caption and title are measured inside the left column; shift them into header space
+    const inHeader = (r: Rect): Rect => ({ x: columnRect.x + r.x, y: columnRect.y + r.y, w: r.w, h: r.h });
+    return { caption: inHeader(captionRect), title: inHeader(titleRect), badge: badgeRect };
+  }, [columnRect, captionRect, titleRect, badgeRect]);
+  const toRect = (l: LayoutRectangle): Rect => ({ x: l.x, y: l.y, w: l.width, h: l.height });
 
   const { phase, dayNumber: currentDayNumber } = usePlanPhase(plan);
 
@@ -102,17 +118,32 @@ export default function HomeScreen() {
 
   return (
     <SafeAreaView style={[styles.container, { backgroundColor: theme.background }]} edges={['top']}>
-      <ScrollView contentContainerStyle={styles.scrollContent} showsVerticalScrollIndicator={false}>
+      <ScrollView
+        contentContainerStyle={styles.scrollContent}
+        showsVerticalScrollIndicator={false}
+        onTouchStart={() => { touching.value = true; }}
+        onTouchEnd={() => { touching.value = false; }}
+        onTouchCancel={() => { touching.value = false; }}
+      >
         <View style={styles.header}>
-          <View>
-            <Text style={[TextStyle.caption, { color: theme.textSecondary, textTransform: 'uppercase' }]}>
+          <View onLayout={(e) => setColumnRect(toRect(e.nativeEvent.layout))}>
+            <Text
+              onLayout={(e) => setCaptionRect(toRect(e.nativeEvent.layout))}
+              style={[TextStyle.caption, { color: theme.textSecondary, textTransform: 'uppercase', alignSelf: 'flex-start' }]}
+            >
               Day {currentDayNumber} of {plan.durationDays}
             </Text>
-            <Text style={[TextStyle.heading2, { color: theme.textPrimary, marginTop: 4 }]}>
+            <Text
+              onLayout={(e) => setTitleRect(toRect(e.nativeEvent.layout))}
+              style={[TextStyle.heading2, { color: theme.textPrimary, marginTop: 4, alignSelf: 'flex-start' }]}
+            >
               Today's Word
             </Text>
           </View>
-          <StreakBadge count={currentStreak} />
+          <View onLayout={(e) => setBadgeRect(toRect(e.nativeEvent.layout))}>
+            <StreakBadge count={currentStreak} />
+          </View>
+          <RunningMan anchors={runnerAnchors} touching={touching} />
         </View>
 
         <VerseCard 
@@ -216,6 +247,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     justifyContent: 'space-between',
     alignItems: 'flex-start',
+    marginTop: 26, // room above the header for the little man
     marginBottom: 32,
   },
   button: {

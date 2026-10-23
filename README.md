@@ -17,6 +17,7 @@ Built with Expo and React Native. No accounts, no backend, no tracking: everythi
 - **Streaks and progress.** A monthly heat map, a progress ring, and a reading streak.
 - **Journal.** Free-form notes and per-day reflections, with a saved version history for each entry.
 - **Daily reminders.** Local notifications at a time you pick, either as a normal notification or as an alarm-style sound.
+- **A little runner.** A tiny animated man runs across the Today header, hops down onto the title and leaps up onto the streak badge. Touch the screen and he stops and stands straight. It respects the system "reduce motion" setting.
 - **Read aloud.** Text-to-speech for the verse, using the best English voice installed on the device.
 - **Share cards.** Render a verse as an image and share it.
 - **Light and dark themes**, plus milestone celebrations at 7, 14, 21, 30, 60 and 90 days.
